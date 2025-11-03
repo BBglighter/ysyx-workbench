@@ -18,7 +18,8 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "sdb.h"
-
+#include <memory/vaddr.h>
+#include <cpu/watchpoint.h>
 static int is_batch_mode = false;
 
 void init_regex();
@@ -49,7 +50,88 @@ static int cmd_c(char *args) {
 
 
 static int cmd_q(char *args) {
+  nemu_state.state = NEMU_QUIT;
   return -1;
+}
+
+static int cmd_si(char *args){
+  char* num_c = strtok(args," ");
+  int n = 0;
+  for(int i = 0;i < strlen(num_c); i++){
+    n = n * 10 + (num_c[i]-'0');
+  }
+  cpu_exec(n);
+  return 0;
+}
+
+static int cmd_info(char *args){
+  char* arg = strtok(args," ");
+  if(*arg == 'r')
+    isa_reg_display();
+  else if(*arg == 'w')
+    print_wp();
+  else
+    printf("wrong args");
+  
+  return 0;
+}
+
+
+static char* str_end = 0;  //save the end of args, cause the "strtok" replace
+                           //the ' ' to '\0'
+
+static int cmd_x(char *args){
+  char* arg = strtok(args," ");
+  int n = 0;
+  for(int i = 0;i < strlen(arg);i++){
+    if(arg[i] >= '0' && arg[i] <= '9')
+      n = n*10 + arg[i]-'0';
+    else
+      printf("input wrong");
+  }
+  arg = strtok(NULL," ");
+  // uint8_t temp = 0;
+  // int l = 2;
+  // vaddr_t addr = 0;
+
+  bool success = true;
+  uint32_t addr = expr(arg,&success,str_end);
+
+  // while(l < strlen(arg)){
+  //   for(int i = 0;i < 2;i++,l++){
+  //     temp = (i == 1)?(temp << 4):0;
+  //     if(arg[l] >= '0' && arg[l] <= '9')
+  //       temp += arg[l] - '0';
+  //     else if(arg[l] >= 'a' && arg[l] <= 'f')
+  //       temp += arg[l]+9 - 'a';
+  //     else if(arg[l] >= 'A' && arg[l] <= 'F')
+  //       temp += arg[l]+9 - 'A';
+  //   }
+  //   addr = addr << 8;
+  //   addr += temp;
+  // }
+  
+  for(int i = 0;i < n;i++){
+    word_t value = vaddr_read(addr+4*i,4);
+    printf("0x%08x : 0x%08x\n",addr+4*i,value);
+  }
+  return 0;
+}
+
+static int cmd_w(char *args){
+  WP* wp = new_wp();
+  bool success;
+  uint32_t val = expr(args,&success,str_end);
+  wp->val = val;
+  wp->str = (char*)malloc(strlen(args)+1);
+  strcpy(wp->str,args);
+  return 0;
+}
+
+static int cmd_d(char *args){
+  int n = atoi(args);
+  delete_wp(n);
+  return 0;
 }
 
 static int cmd_help(char *args);
@@ -60,9 +142,13 @@ static struct {
   int (*handler) (char *);
 } cmd_table [] = {
   { "help", "Display information about all supported commands", cmd_help },
-  { "c", "Continue the execution of the program", cmd_c },
+  { "c", "Continue the execution of the  program", cmd_c },
   { "q", "Exit NEMU", cmd_q },
-
+  { "si","step in the program", cmd_si},
+  { "info","show info u choose",cmd_info},
+  { "x","show memory",cmd_x},
+  { "w","watchpoint",cmd_w},
+  { "d","delete a watchpoint",cmd_d},
   /* TODO: Add more commands */
 
 };
@@ -96,6 +182,7 @@ void sdb_set_batch_mode() {
   is_batch_mode = true;
 }
 
+
 void sdb_mainloop() {
   if (is_batch_mode) {
     cmd_c(NULL);
@@ -103,12 +190,12 @@ void sdb_mainloop() {
   }
 
   for (char *str; (str = rl_gets()) != NULL; ) {
-    char *str_end = str + strlen(str);
-
+    //char *
+    str_end = str + strlen(str);
+    
     /* extract the first token as the command */
     char *cmd = strtok(str, " ");
     if (cmd == NULL) { continue; }
-
     /* treat the remaining string as the arguments,
      * which may need further parsing
      */
