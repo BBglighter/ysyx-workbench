@@ -242,7 +242,7 @@ uint32_t eval(int p, int q){
 
 uint32_t expr(char *e, bool *success,char *end) {
   memset(tokens,0,sizeof(Token)*10000);
- init_regex();
+  //init_regex();
 
   for(int i=0;e+i < end; i++){
     e[i] = (e[i]==0)?' ':e[i];
@@ -252,6 +252,9 @@ uint32_t expr(char *e, bool *success,char *end) {
 
   if (!make_token(e)) {
     *success = false;
+    for(int i = 0;i < NR_REGEX;i ++){
+      regfree(&re[i]);
+    }  
     return 0;
   }
 
@@ -262,5 +265,8 @@ uint32_t expr(char *e, bool *success,char *end) {
   }
   uint32_t val = eval(0,i-1);
   Log("val is 0x%x == %d",val,val);
+  for(int i = 0;i < NR_REGEX;i ++){
+    regfree(&re[i]);
+  }
   return val;
 }

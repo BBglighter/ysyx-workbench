@@ -77,6 +77,7 @@ void free_wp(WP *wp){
   wp -> next = free_;
   free_ = wp;
   wp -> state = false;
+  free(wp->str);
 }
 
 void watch(){

@@ -39,6 +39,8 @@ word_t isa_reg_str2val(const char *s, bool *success) {
   int reg_pos = 0;
   if(!strcmp(regs[0],s))
     return 0;
+  if(!strcmp("$pc",s))
+    return cpu.pc;
   s++; // cut the char '$'
   for(;reg_pos < 32;reg_pos ++){
     if(!strcmp(regs[reg_pos],s))
