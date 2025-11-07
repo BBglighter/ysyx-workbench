@@ -86,7 +86,7 @@ void watch(){
   while(h != NULL){
     uint32_t val = expr(h->str,&success,h->str+strlen(h->str));
     if(val != h->val){
-      nemu_state.state = NEMU_STOP;
+      nemu_state.state = (nemu_state.state == NEMU_RUNNING)? NEMU_STOP : nemu_state.state;
       Log("Watchpoint No%d (%s) changed : %x -> %x",h->NO,h->str,h->val,val);
       h->val = val;
     }

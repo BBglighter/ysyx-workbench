@@ -57,9 +57,7 @@ static int cmd_q(char *args) {
 static int cmd_si(char *args){
   char* num_c = strtok(args," ");
   int n = 0;
-  for(int i = 0;i < strlen(num_c); i++){
-    n = n * 10 + (num_c[i]-'0');
-  }
+  n = atoi(num_c);
   cpu_exec(n);
   return 0;
 }
@@ -118,6 +116,13 @@ static int cmd_x(char *args){
   return 0;
 }
 
+static int cmd_p(char *args){
+  bool success;
+  uint32_t val = expr(args,&success,str_end);
+  Log("the exp : %s ,the val :%d",args,val);
+  return 0;
+}
+
 static int cmd_w(char *args){
   WP* wp = new_wp();
   bool success;
@@ -149,6 +154,7 @@ static struct {
   { "x","show memory",cmd_x},
   { "w","watchpoint",cmd_w},
   { "d","delete a watchpoint",cmd_d},
+  { "p","calculate the exp",cmd_p}
   /* TODO: Add more commands */
 
 };

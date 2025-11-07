@@ -38,7 +38,7 @@ static struct rule {
    */
 
   {" +", TK_NOTYPE},    // spaces
-  {"0x[0-9]+", TK_HEX},// hex
+  {"0x[0-9A-Fa-f]+", TK_HEX},// hex
   {"[0-9]+", TK_0_9},   // 0_9
   {"\\+", '+'},         // plus
   {"==", TK_EQ},        // equal
@@ -242,13 +242,13 @@ uint32_t eval(int p, int q){
 
 uint32_t expr(char *e, bool *success,char *end) {
   memset(tokens,0,sizeof(Token)*10000);
-  //init_regex();
+  // init_regex();
 
   for(int i=0;e+i < end; i++){
     e[i] = (e[i]==0)?' ':e[i];
   }
 
-  Log("%s\n",e);
+  //Log("%s\n",e);
 
   if (!make_token(e)) {
     *success = false;
@@ -264,6 +264,10 @@ uint32_t expr(char *e, bool *success,char *end) {
     i++;
   }
   uint32_t val = eval(0,i-1);
-  Log("val is 0x%x == %d",val,val);
+  //Log("val is 0x%x == %d",val,val);
+  //
+  // for(int i = 0;i < NR_REGEX;i ++){
+  //   regfree(&re[i]);
+  // }
   return val;
 }
