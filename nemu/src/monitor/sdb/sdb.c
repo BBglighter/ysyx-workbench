@@ -69,7 +69,7 @@ static int cmd_info(char *args){
   else if(*arg == 'w')
     print_wp();
   else
-    printf("wrong args");
+    printf("wrong args\n");
   
   return 0;
 }
@@ -85,7 +85,7 @@ static int cmd_x(char *args){
     if(arg[i] >= '0' && arg[i] <= '9')
       n = n*10 + arg[i]-'0';
     else
-      printf("input wrong");
+      printf("input wrong\n");
   }
   arg = strtok(NULL," ");
   // uint8_t temp = 0;

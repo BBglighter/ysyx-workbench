@@ -252,9 +252,9 @@ uint32_t expr(char *e, bool *success,char *end) {
 
   if (!make_token(e)) {
     *success = false;
-    for(int i = 0;i < NR_REGEX;i ++){
-      regfree(&re[i]);
-    }  
+    // for(int i = 0;i < NR_REGEX;i ++){
+    //   regfree(&re[i]);
+    // }  
     return 0;
   }
 
