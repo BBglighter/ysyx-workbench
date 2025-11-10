@@ -119,7 +119,7 @@ static int cmd_x(char *args){
 static int cmd_p(char *args){
   bool success;
   uint32_t val = expr(args,&success,str_end);
-  Log("the exp : %s ,the val :%d",args,val);
+  Log("the exp : %s ,the val :0x%08x",args,val);
   return 0;
 }
 

@@ -35,7 +35,7 @@ idea:
 -include ../Makefile
 
 
-TOPNAME = test
+TOPNAME = detectkey
 NXDC_FILES = constr/top.nxdc
 INC_PATH ?=
 
