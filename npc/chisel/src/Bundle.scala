@@ -10,6 +10,7 @@ class ctrlFlowIO extends Bundle{
 
 class decodeCtrl extends Bundle{
   val fuType = Output(UInt(4.W))
+  val aluOp = Output(UInt(4.W))
   val src1Type = Output(UInt(2.W))
   val src2Type = Output(UInt(2.W))
   val immType = Output(UInt(3.W))
@@ -17,20 +18,23 @@ class decodeCtrl extends Bundle{
   val memType = Output(UInt(4.W))
 }
 
-class RegFlow extends Bundle{
+class RegRead extends Bundle{
   val rdata1 = Output(UInt(32.W))
   val rdata2 = Output(UInt(32.W))
-  val raddr1 = Input(UInt(32.W))
-  val raddr2 = Input(UInt(32.W))
+  val raddr1 = Input(UInt(5.W))
+  val raddr2 = Input(UInt(5.W))
+}
+
+class RegWrite extends Bundle{
   val wen = Input(Bool())
   val waddr = Input(UInt(5.W))
   val wdata = Input(UInt(32.W))
 }
 
-class DataSrcIO extends NutCoreBundle {
+class DataSrcIO extends Bundle {
   val src1 = Output(UInt(32.W))
   val src2 = Output(UInt(32.W))
-  val imm  = Output(UInt(32.W))
+  val imm  = Output(UInt(32.W)) 
 }
 
 class ID2EX extends Bundle{
@@ -39,6 +43,5 @@ class ID2EX extends Bundle{
   val data = new DataSrcIO
 }
 
-class EX2LS extends Bundle{
-  
-}
+// class EX2LS extends Bundle{
+// }
