@@ -43,5 +43,20 @@ class ID2EX extends Bundle{
   val data = new DataSrcIO
 }
 
-// class EX2LS extends Bundle{
-// }
+class EXUdata extends Bundle{
+  val dnpc = Output(UInt(32.W))
+  val wdata = Output(UInt(32.W))
+}
+
+class EX2LS extends Bundle{
+  val cf = new ctrlFlowIO
+  val idCtrl = new decodeCtrl
+  val data = new DataSrcIO
+  val exuData = new EXUdata
+}
+
+class LS2WB extends Bundle{
+  val cf = new ctrlFlowIO
+  val idCtrl = new decodeCtrl
+  val wbData = new EXUdata
+}
