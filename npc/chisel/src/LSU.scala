@@ -17,10 +17,10 @@ class LSU extends Module{
     lsDPI.io.valid := true.B
     when(in.bits.idCtrl.immType === ImmType.immS){
       lsDPI.io.wen := true.B
-      lsDPI.io.waddr := in.bits.data.src1 + in.bits.data.imm
+      lsDPI.io.waddr := in.bits.exuData.wdata
       lsDPI.io.wdata := in.bits.data.src2
     }.otherwise{
-    lsDPI.io.raddr := in.bits.data.src1 + in.bits.data.imm
+    lsDPI.io.raddr := in.bits.exuData.wdata
     }
   }
 

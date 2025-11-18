@@ -40,7 +40,8 @@ class IDU extends Module{
   data.imm := MuxLookup(immType, 0.U(32.W))(Seq(
     ImmType.immR -> 0.U(32.W),
     ImmType.immI -> Cat(Fill(20, instr(31)), instr(31,20)),
-    ImmType.immS -> Cat(Fill(20, instr(31)), instr(31,25),instr(11,7))
+    ImmType.immS -> Cat(Fill(20, instr(31)), instr(31,25),instr(11,7)),
+    ImmType.immU -> Cat(instr(31,12), Fill(12, 0.U))
     //todo
   ))
   io.out.bits.data := data

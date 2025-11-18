@@ -78,7 +78,7 @@ $(BIN): $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
 all: default
 
 sim:
-	$(VERILATOR) -cc --exe --build --trace -j vsrc/Top.sv csrc/sim_main.cpp
+	$(VERILATOR) -cc --exe --build --trace-fst -j vsrc/Top.sv csrc/sim_main.cpp
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
 
 sim_nvboard: $(BIN) 

@@ -1,5 +1,5 @@
 #include <verilated.h>
-#include "verilated_vcd_c.h"
+#include "verilated_fst_c.h"
 
 // Include model header, generated from Verilating "top.v"
 #include "VTop.h"
@@ -8,7 +8,7 @@
 
 static uint8_t *pmem = NULL;
 void init_mem() {
-  pmem = (uint8_t *)malloc(sizeof(uint32_t) * 100);
+  pmem = (uint8_t *)malloc(sizeof(uint32_t) * 0x80000000);
   assert(pmem);
 }
 
@@ -16,8 +16,7 @@ static inline uint32_t host_read(void *addr, int len) {
   switch (len) {
     case 1: return *(uint8_t  *)addr;
     case 2: return *(uint16_t *)addr;
-    case 4: return *(uint32_t *)addr;
-    default: assert(0);
+    case 4: printf("0x%08x \n",*(uint32_t *)addr); return *(uint32_t *)addr;
   }
 }
 
@@ -25,7 +24,7 @@ static inline void host_write(void *addr, int len, int data) {
   switch (len) {
     case 1: *(uint8_t  *)addr = data; return;
     case 2: *(uint16_t *)addr = data; return;
-    case 4: *(uint32_t *)addr = data; return;
+    case 4: printf("0x%08x \n",*(uint32_t *)addr); *(uint32_t *)addr = data; return;
   }
 }
 
@@ -41,7 +40,11 @@ extern "C" void pmem_write(int addr, int len, int data) {
 }
 
 extern "C" void ebreak(int exit_code){
-  printf("npc return %d\n",exit_code);
+  static int flag = 0;
+  if(!flag){
+    flag = 1;
+    printf("npc return %d\n",exit_code);
+  }
   Verilated::gotFinish(true);
 }
 
@@ -63,24 +66,28 @@ int main(int argc, char** argv) {
     VTop* top = new VTop{contextp};
     
     Verilated::traceEverOn(true);
-    VerilatedVcdC* tfp = new VerilatedVcdC;
+    VerilatedFstC* tfp = new VerilatedFstC;
     top->trace(tfp, 99);
-    tfp->open("wave.vcd");
+    tfp->open("wave.fst");
     uint64_t main_time = 0;
-
     init_mem();
-    uint32_t *byte4 = (uint32_t *)pmem;
-    byte4[0] = 0x00500093;
-    byte4[1] = 0x00308113;
-    byte4[2] = 0xfff10193;
-    byte4[3] = 0xfff10193;
-    byte4[4] = 0x00100073;
+    uint32_t *M = (uint32_t *)pmem;
+    
+    FILE * fp = fopen("/home/parano1d/ysyx-workbench/npc/obj_dir/sum.bin","rb");
+    uint64_t count = 0;
+    uint32_t temp = 0;
+    size_t n;
+
+    while((n = fread(&temp,1,sizeof(uint32_t),fp)) > 0) {
+        M[count] = temp;
+        count+=1;
+    }
+    
     // Simulate until $finish
-    int n = 10;
-    while (!contextp->gotFinish() && n--) {
+    while (!contextp->gotFinish()) {
 
         top->io_inst = pmem_read(top->io_pc , 4);
-        printf("pc: %x 0x08%x\n",top->io_pc,top->io_inst);
+        printf("pc: %x 0x%08x\n",top->io_pc,top->io_inst);
         // Evaluate model
         top->clock = 0;
         top->eval();
