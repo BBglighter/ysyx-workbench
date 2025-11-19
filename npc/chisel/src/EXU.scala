@@ -14,13 +14,13 @@ class EXU extends Module{
     ImmType.immR -> in.bits.data.src1,
     ImmType.immI -> in.bits.data.src1,
     ImmType.immS -> in.bits.data.src1,
-    ImmType.immU -> 0.U,
+    ImmType.immU -> 0.U
     ))
   alu.io.val2 := MuxLookup(in.bits.idCtrl.immType,0.U)(Seq(
     ImmType.immR -> in.bits.data.src2,
     ImmType.immI -> in.bits.data.imm,
     ImmType.immS -> in.bits.data.imm,
-    ImmType.immU -> in.bits.data.imm,
+    ImmType.immU -> in.bits.data.imm
     ))
   alu.io.aluOp := in.bits.idCtrl.aluOp
   
