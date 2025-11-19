@@ -8,32 +8,38 @@
 
 static uint8_t *pmem = NULL;
 void init_mem() {
-  pmem = (uint8_t *)malloc(sizeof(uint32_t) * 0x80000000);
+  pmem = (uint8_t *)malloc(sizeof(uint32_t) * 0xFFFFFFFF);
   assert(pmem);
 }
 
-static inline uint32_t host_read(void *addr, int len) {
-  switch (len) {
-    case 1: printf("0x%08x 0x%08x \n",addr,*(uint32_t *)addr);return *(uint32_t  *)addr;
-    case 2: return *(uint32_t *)addr;
-    case 4: return *(uint32_t *)addr;
-  }
+static inline uint32_t host_read(void *addr) {
+  // printf("0x%08x 0x%08x\n",addr,*(uint32_t *)addr);
+  return *(uint32_t *)addr;
 }
 
 static inline void host_write(void *addr, int len, int data) {
+  // printf("0x%08x 0x%08x\n",addr,*(uint32_t *)addr);
   switch (len) {
-    case 1: *(uint8_t  *)addr = data; printf("0x%08x 0x%08x \n",addr,*(uint32_t *)addr);return;
+    case 1: *(uint8_t  *)addr = data; return;
     case 2: *(uint16_t *)addr = data; return;
-    case 4:  *(uint32_t *)addr = data; printf("0x%08x 0x%08x \n",addr,*(uint32_t *)addr);return;
+    case 4: *(uint32_t *)addr = data; return;
   }
 }
 
 uint8_t* guest_to_host(uint32_t paddr) {
-  //printf("0x%08x 0x%08x\n",paddr,pmem);
-  return pmem + paddr; }
+  static uint8_t count = 0;
+  if( paddr == 0){
+    // printf("0x%08x \n",pmem + paddr - 0x80000000);
+    count++;
+    return &count;
+  }else{
+    // printf("0x%08x \n",pmem + paddr - 0x80000000);
+    return pmem + paddr - 0x80000000;
+  }
+}
 
-extern "C" int pmem_read(uint32_t addr, int len) {
-  uint32_t ret = host_read(guest_to_host(addr & ~0x3), len);
+extern "C" int pmem_read(uint32_t addr) {
+  uint32_t ret = host_read(guest_to_host(addr & ~0x3));
   return ret;
 }
 
@@ -60,6 +66,7 @@ extern "C" void ebreak(int exit_code){
   Verilated::gotFinish(true);
 }
 
+
 int main(int argc, char** argv) {
     // See a similar example walkthrough in the verilator manpage.
 
@@ -85,12 +92,13 @@ int main(int argc, char** argv) {
     init_mem();
     uint32_t *M = (uint32_t *)pmem;
     
-    FILE * fp = fopen("/home/parano1d/ysyx-workbench/npc/obj_dir/mem.bin","rb");
+    FILE * fp = fopen("/home/parano1d/ysyx-workbench/npc/obj_dir/test.bin","rb");
     uint64_t count = 0;
     uint32_t temp = 0;
     size_t n;
-
+    M += 0x00000000;
     while((n = fread(&temp,1,sizeof(uint32_t),fp)) > 0) {
+    // printf("0x%08x : 0x%08x\n",M+count,temp);
         M[count] = temp;
         count+=1;
     }
@@ -109,12 +117,19 @@ int main(int argc, char** argv) {
     // M[12]= 0x002081a3;
     // M[13]= 0x0030ce03;
     // M[14]= 0x0000ae83;
-  
     // Simulate until $finish
+    for(int i = 0;i < 1 ;i ++){
+      top->reset = 1;
+      top->clock = 0;
+      top->eval();
+      top->clock = 1;
+      top->eval();
+      top->reset = 0;
+    }
     while (!contextp->gotFinish()) {
         wen = 1;
-        top->io_inst = pmem_read(top->io_pc , 4);
-        printf("pc: %x 0x%08x\n",top->io_pc,top->io_inst);
+        //top->io_inst = pmem_read(top->io_pc , 4);
+        //printf("pc: %x 0x%08x\n",top->io_pc,top->io_inst);
         // Evaluate model
         top->clock = 0;
         top->eval();

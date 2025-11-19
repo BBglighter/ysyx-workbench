@@ -4,9 +4,10 @@ import chisel3._
 import chisel3.util._
 import chisel3.experimental._
 
-class halt extends BlackBox with HasBlackBoxPath {
+class halt() extends BlackBox with HasBlackBoxPath {
   val io = IO(new Bundle{
     val halt = Input(Bool())
+    val h_return = Input(UInt(32.W))
   })
   addPath("chisel/src/resources/halt.sv")
 }
@@ -16,7 +17,6 @@ class loadstore extends BlackBox with HasBlackBoxPath{
     val wen = Input(Bool())
     val valid = Input(Bool())
     val raddr = Input(UInt(32.W))
-    val rbyte  = Input(UInt(32.W))
     val wdata = Input(UInt(32.W))
     val waddr = Input(UInt(32.W))
     val wmask = Input(UInt(32.W))

@@ -24,10 +24,6 @@ class LSU extends Module{
     }
   }
 
-  lsDPI.io.rbyte := MuxLookup(in.bits.idCtrl.memType,0.U(32.W))(Seq(
-    MemOpType.lw -> 4.U(32.W),
-    MemOpType.lbu -> 1.U(32.W)
-  ))
 
   lsDPI.io.wmask := MuxLookup(in.bits.idCtrl.memType,0.U(32.W))(Seq(
     MemOpType.sw -> 15.U(32.W),

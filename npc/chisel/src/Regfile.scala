@@ -7,6 +7,7 @@ class Regfile extends Module{
   val io = IO(new Bundle{
     val read = new RegRead
     val write = new RegWrite
+    val halt_d = Output(UInt(32.W))
   })
   val regs = Reg(Vec(32,UInt(32.W)))
 
@@ -17,4 +18,5 @@ class Regfile extends Module{
   when(io.write.wen && (io.write.waddr =/= 0.U)){
     regs(io.write.waddr) := io.write.wdata
   }
+  io.halt_d := regs(10.U)
 }

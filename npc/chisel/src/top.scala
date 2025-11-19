@@ -4,14 +4,14 @@ import chisel3._
 import chisel3.util._
 
 class Top extends Module{
-  val io = IO(new Bundle{
-    val inst = Input(UInt(32.W))
-    val pc = Output(UInt(32.W))
-  })
+  // val io = IO(new Bundle{
+  //   val inst = Input(UInt(32.W))
+  //   val pc = Output(UInt(32.W))
+  // })
 
-  val reg_pc = RegInit(0.U(32.W))
+  val reg_pc = RegInit(0x80000000L.U(32.W))
 
-  io.pc := reg_pc
+  // io.pc := reg_pc
   val IFU = Module(new IFU())
   val IDU = Module(new IDU())
   val EXU = Module(new EXU())
@@ -22,9 +22,7 @@ class Top extends Module{
   
 
   reg_pc := WBU.out
-  IFU.in.valid := true.B
-  IFU.in.bits.instr := io.inst
-  IFU.in.bits.pc := reg_pc
+  IFU.pc := reg_pc
   IFU.out <> IDU.io.in
   IDU.io.out <> EXU.in
   EXU.out <> LSU.in
@@ -32,6 +30,8 @@ class Top extends Module{
   RF.io.read <> IDU.io.io_reg
   RF.io.write <> WBU.io_reg
 
+  
   val halt = Module(new halt())
+  halt.io.h_return := RF.io.halt_d
   halt.io.halt := WBU.halt
 }
