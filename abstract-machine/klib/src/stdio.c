@@ -6,7 +6,45 @@
 #if !defined(__ISA_NATIVE__) || defined(__NATIVE_USE_KLIB__)
 
 int printf(const char *fmt, ...) {
-  panic("Not implemented");
+  va_list ap;
+  va_start(ap,fmt);
+  int s = 0,num = 0;char * str;
+  int i = 0;
+  while(fmt[s] != '\0'){
+    if(fmt[s] == '%'){
+      s++;
+      switch (fmt[s])
+      {
+      case 'd':
+        num = va_arg(ap,int);
+        if(num == 0){
+          putch('0'); 
+          break;
+        }else if(num < 0){
+          putch('-');
+          num = -num;
+        }
+        int stack[100] = {0};
+        for(i = 0;num != 0;i ++){
+          stack[i] = num % 10;
+          num = num / 10;
+        }
+        i--;
+        for(;i >= 0;i --){
+          putch(stack[i] + '0');
+        }
+        break;
+      case 's':
+        str = va_arg(ap,char *);
+        putstr(str);
+        break;
+      }
+      s++;
+    }else
+      putch(fmt[s++]);
+  }
+  va_end(ap);
+  return 0;
 }
 
 int vsprintf(char *out, const char *fmt, va_list ap) {
@@ -26,7 +64,7 @@ int sprintf(char *out, const char *fmt, ...) {
       case 'd':
         num = va_arg(ap,int);
         if(num == 0) {
-          out[d++] = '0';
+          out[d++] = '0'; s++;
           break;
         }else if(num < 0){
           out[d++] = '-';

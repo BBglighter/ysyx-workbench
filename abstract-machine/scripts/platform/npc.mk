@@ -30,6 +30,5 @@ run: insert-arg
 	verilator -cc --exe --build --trace-fst  $(NPC_HOME)/vsrc/Top.sv $(NPC_HOME)/csrc/sim_main.cpp
 	cp $(IMAGE_REL).bin $(NPC_HOME)/obj_dir/test.bin 
 	./obj_dir/VTop
-	echo "TODO: add command here to run simulation"
 
 .PHONY: insert-arg

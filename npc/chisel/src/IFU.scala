@@ -17,7 +17,6 @@ class IFU extends Module{
   lsDPI.io.wmask := 0.U(32.W)
   
   lsDPI.io.raddr := pc
-
   out.bits.pc := pc
   out.bits.instr := lsDPI.io.rdata
 }

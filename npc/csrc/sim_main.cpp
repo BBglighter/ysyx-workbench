@@ -1,4 +1,5 @@
 #include <verilated.h>
+#include <sys/time.h>
 #include "verilated_fst_c.h"
 
 // Include model header, generated from Verilating "top.v"
@@ -14,7 +15,11 @@ void init_mem() {
 
 static inline uint32_t host_read(void *addr) {
   // printf("0x%08x 0x%08x\n",addr,*(uint32_t *)addr);
+  if(addr >= pmem){
   return *(uint32_t *)addr;
+  }else{
+    return 0;
+  }
 }
 
 static inline void host_write(void *addr, int len, int data) {
@@ -26,10 +31,10 @@ static inline void host_write(void *addr, int len, int data) {
   }
 }
 
+static uint8_t count = 0;
 uint8_t* guest_to_host(uint32_t paddr) {
-  static uint8_t count = 0;
-  if( paddr == 0){
-    // printf("0x%08x \n",pmem + paddr - 0x80000000);
+  // printf("%x \n",paddr);
+  if( paddr == 0 ){
     count++;
     return &count;
   }else{
@@ -38,13 +43,40 @@ uint8_t* guest_to_host(uint32_t paddr) {
   }
 }
 
+
+static uint64_t get_time_internal() {
+  // struct timespec now;
+  // clock_gettime(CLOCK_MONOTONIC_COARSE, &now);
+  // uint64_t us = now.tv_sec * 1000000 + now.tv_nsec / 1000;
+  struct timeval now;
+  gettimeofday(&now, NULL);
+  uint64_t us = now.tv_sec * 1000000;
+  return us;
+}
+
+static uint64_t boot_time = 0;
+uint64_t get_time() {
+  if (boot_time == 0) boot_time = get_time_internal();
+  uint64_t now = get_time_internal();
+  return now - boot_time;
+}
+
+#define RTC_ADDR 0x10000008
+static uint64_t us = get_time();
 extern "C" int pmem_read(uint32_t addr) {
+  if(addr == RTC_ADDR || addr == RTC_ADDR+4){
+    return (addr == RTC_ADDR) ? (uint32_t)(us & 0xFFFFFFFF) : (uint32_t)(us >> 32);
+  }
   uint32_t ret = host_read(guest_to_host(addr & ~0x3));
   return ret;
 }
 
 static int wen = 1;
 extern "C" void pmem_write(int addr, int wmask, int data) {
+  if(addr == 0x10000000){
+    putchar(data);
+    return;
+  }
   int bitc = 0;
   while(wmask){
     if(wmask&1 != 0)
@@ -61,7 +93,10 @@ extern "C" void ebreak(int exit_code){
   static int flag = 0;
   if(!flag){
     flag = 1;
-    printf("npc return %d\n",exit_code);
+    if(!exit_code)
+      printf("\033[1;32mNPC HIT GOOD TRAP\033[0m\n");
+    else
+      printf("\033[1;31mNPC HIT BAD TRAP\033[0m\n");
   }
   Verilated::gotFinish(true);
 }
@@ -131,12 +166,13 @@ int main(int argc, char** argv) {
         //top->io_inst = pmem_read(top->io_pc , 4);
         //printf("pc: %x 0x%08x\n",top->io_pc,top->io_inst);
         // Evaluate model
+        us = get_time();
         top->clock = 0;
         top->eval();
         top->clock = 1;
         top->eval();
-        tfp->dump(main_time);
-        main_time++;
+        // tfp->dump(main_time);
+        // main_time++;
     }
 
     // Final model cleanup
