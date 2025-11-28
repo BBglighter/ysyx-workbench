@@ -18,7 +18,13 @@
 #include "../local-include/reg.h"
 
 bool isa_difftest_checkregs(CPU_state *ref_r, vaddr_t pc) {
-  return false;
+  for(int i = 0;i < 32;i ++){
+    if(ref_r->gpr[i] != gpr(i)){
+      printf(ANSI_FMT("pc = 0x%08x: nemu_gpr[%d] (%08x) != spike_gpr[%d] (%08x) \n", ANSI_FG_RED),pc,i,gpr(i),i,ref_r->gpr[i]);
+      return false;
+    }
+  }
+  return true;
 }
 
 void isa_difftest_attach() {

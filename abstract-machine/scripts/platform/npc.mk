@@ -27,7 +27,8 @@ image: image-dep
 
 
 run: insert-arg
-	verilator -cc --exe --build --trace-fst  $(NPC_HOME)/vsrc/Top.sv $(NPC_HOME)/csrc/sim_main.cpp
+	verilator -cc --exe --build --trace-fst  $(NPC_HOME)/vsrc/Top.sv $(wildcard $(NPC_HOME)/csrc/*.cpp) \
+		-LDFLAGS "-lreadline -lncurses"
 	cp $(IMAGE_REL).bin $(NPC_HOME)/obj_dir/test.bin 
 	./obj_dir/VTop
 

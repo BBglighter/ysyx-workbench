@@ -45,12 +45,12 @@ uint8_t* guest_to_host(uint32_t paddr) {
 
 
 static uint64_t get_time_internal() {
-  // struct timespec now;
-  // clock_gettime(CLOCK_MONOTONIC_COARSE, &now);
-  // uint64_t us = now.tv_sec * 1000000 + now.tv_nsec / 1000;
-  struct timeval now;
-  gettimeofday(&now, NULL);
-  uint64_t us = now.tv_sec * 1000000;
+  struct timespec now;
+  clock_gettime(CLOCK_MONOTONIC_COARSE, &now);
+  uint64_t us = now.tv_sec * 1000000 + now.tv_nsec / 1000;
+  // struct timeval now;
+  // gettimeofday(&now, NULL);
+  // uint64_t us = now.tv_sec * 1000000;
   return us;
 }
 
@@ -101,88 +101,102 @@ extern "C" void ebreak(int exit_code){
   Verilated::gotFinish(true);
 }
 
+VTop* top;
+VerilatedContext* contextp;
+bool npcState = true;
+
+bool npc_exec(uint64_t n){
+  // while(1){
+  //   us = get_time();
+  //   top->clock = 0;
+  //   top->eval();
+  //   top->clock = 1;
+  //   top->eval();
+  // }
+  for(;n > 0;n --){
+    if(contextp->gotFinish()) {return true;}
+    wen = 1;
+    us = get_time();
+    top->clock = 0;
+    top->eval();
+    top->clock = 1;
+    top->eval();
+    // tfp->dump(main_time);
+    // main_time++;
+  }
+  return 0;
+}
+
+
+void sdb_mainloop();
 
 int main(int argc, char** argv) {
-    // See a similar example walkthrough in the verilator manpage.
+  // See a similar example walkthrough in the verilator manpage.
 
-    // This is intended to be a minimal example.  Before copying this to start a
-    // real project, it is better to start with a more complete example,
-    // e.g. examples/c_tracing.
+  // This is intended to be a minimal example.  Before copying this to start a
+  // real project, it is better to start with a more complete example,
+  // e.g. examples/c_tracing.
 
-    // Construct a VerilatedContext to hold simulation time, etc.
-    VerilatedContext* contextp = new VerilatedContext;
+  // Construct a VerilatedContext to hold simulation time, etc.
+  contextp = new VerilatedContext;
 
-    // Pass arguments so Verilated code can see them, e.g. $value$plusargs
-    // This needs to be called before you create any model
-    contextp->commandArgs(argc, argv);
+  // Pass arguments so Verilated code can see them, e.g. $value$plusargs
+  // This needs to be called before you create any model
+  contextp->commandArgs(argc, argv);
 
-    // Construct the Verilated model, from Vtop.h generated from Verilating "top.v"
-    VTop* top = new VTop{contextp};
-    
-    Verilated::traceEverOn(true);
-    VerilatedFstC* tfp = new VerilatedFstC;
-    top->trace(tfp, 99);
-    tfp->open("wave.fst");
-    uint64_t main_time = 0;
-    init_mem();
-    uint32_t *M = (uint32_t *)pmem;
-    
-    FILE * fp = fopen("/home/parano1d/ysyx-workbench/npc/obj_dir/test.bin","rb");
-    uint64_t count = 0;
-    uint32_t temp = 0;
-    size_t n;
-    M += 0x00000000;
-    while((n = fread(&temp,1,sizeof(uint32_t),fp)) > 0) {
-    // printf("0x%08x : 0x%08x\n",M+count,temp);
-        M[count] = temp;
-        count+=1;
-    }
-    // M[0] = 0x10000093;
-    // M[1] = 0x12345137;
-    // M[2] = 0x08810113;
-    // M[3] = 0x00208023;
-    // M[4] = 0x0000c283;
-    // M[5] = 0x09900113;
-    // M[6] = 0x002080a3;
-    // M[7] = 0x0010c303;
-    // M[8] = 0x0aa00113;
-    // M[9] = 0x00208123;
-    // M[10]= 0x0020c383;
-    // M[11]= 0x0ff00113;
-    // M[12]= 0x002081a3;
-    // M[13]= 0x0030ce03;
-    // M[14]= 0x0000ae83;
-    // Simulate until $finish
-    for(int i = 0;i < 1 ;i ++){
-      top->reset = 1;
-      top->clock = 0;
-      top->eval();
-      top->clock = 1;
-      top->eval();
-      top->reset = 0;
-    }
-    while (!contextp->gotFinish()) {
-        wen = 1;
-        //top->io_inst = pmem_read(top->io_pc , 4);
-        //printf("pc: %x 0x%08x\n",top->io_pc,top->io_inst);
-        // Evaluate model
-        us = get_time();
-        top->clock = 0;
-        top->eval();
-        top->clock = 1;
-        top->eval();
-        // tfp->dump(main_time);
-        // main_time++;
-    }
+  // Construct the Verilated model, from Vtop.h generated from Verilating "top.v"
+  top = new VTop{contextp};
+  
+  Verilated::traceEverOn(true);
+  VerilatedFstC* tfp = new VerilatedFstC;
+  top->trace(tfp, 99);
+  tfp->open("wave.fst");
+  uint64_t main_time = 0;
+  init_mem();
+  uint32_t *M = (uint32_t *)pmem;
+  
+  FILE * fp = fopen("/home/parano1d/ysyx-workbench/npc/obj_dir/test.bin","rb");
+  uint64_t count = 0;
+  uint32_t temp = 0;
+  size_t n;
+  M += 0x00000000;
+  while((n = fread(&temp,1,sizeof(uint32_t),fp)) > 0) {
+  // printf("0x%08x : 0x%08x\n",M+count,temp);
+      M[count] = temp;
+      count+=1;
+  }
+  // Simulate until $finish
+  for(int i = 0;i < 1 ;i ++){
+    top->reset = 1;
+    top->clock = 0;
+    top->eval();
+    top->clock = 1;
+    top->eval();
+    top->reset = 0;
+  }
 
-    // Final model cleanup
-    top->final();
-    tfp->close();
 
-    // Destroy model
-    delete top;
+  // while(1){
+  //   wen = 1;
+  //   us = get_time();
+  //   top->clock = 0;
+  //   top->eval();
+  //   top->clock = 1;
+  //   top->eval();
+  // }
+  sdb_mainloop();
+  //top->io_inst = pmem_read(top->io_pc , 4);
+  //printf("pc: %x 0x%08x\n",top->io_pc,top->io_inst);
+  // Evaluate model
 
-    // Return good completion status
-    return 0;
+  // Final model cleanup
+  top->final();
+  tfp->close();
+
+  // Destroy model
+  delete top;
+
+  // Return good completion status
+  return 0;
 }
 

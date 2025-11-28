@@ -32,13 +32,13 @@ paddr_t host_to_guest(uint8_t *haddr) { return haddr - pmem + CONFIG_MBASE; }
 void mtracePrint(paddr_t addr,word_t data,bool w_r);
 static word_t pmem_read(paddr_t addr, int len) {
   word_t ret = host_read(guest_to_host(addr), len);
-  mtracePrint(addr,ret,0);
+  IFDEF(CONFIG_MTRACE,mtracePrint(addr,ret,0));
   return ret;
 }
 
 static void pmem_write(paddr_t addr, int len, word_t data) {
   host_write(guest_to_host(addr), len, data);
-  mtracePrint(addr,data,1);
+  IFDEF(CONFIG_MTRACE,mtracePrint(addr,data,1));
 }
 
 static void out_of_bound(paddr_t addr) {
