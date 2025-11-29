@@ -88,9 +88,6 @@ static int cmd_x(char *args){
       printf("input wrong\n");
   }
   arg = strtok(NULL," ");
-  // uint8_t temp = 0;
-  // int l = 2;
-  // vaddr_t addr = 0;
 
   bool success = true;
   uint32_t addr = expr(arg,&success,str_end);

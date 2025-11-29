@@ -4,10 +4,9 @@ import chisel3._
 import chisel3.util._
 
 class Top extends Module{
-  // val io = IO(new Bundle{
-  //   val inst = Input(UInt(32.W))
-  //   val pc = Output(UInt(32.W))
-  // })
+  val io = IO(new Bundle{
+    val regValid = Input(Bool())
+  })
 
   val reg_pc = RegInit(0x80000000L.U(32.W))
 
@@ -29,6 +28,7 @@ class Top extends Module{
   LSU.out <> WBU.in
   RF.io.read <> IDU.io.io_reg
   RF.io.write <> WBU.io_reg
+  RF.io.valid := io.regValid
 
   
   val halt = Module(new halt())

@@ -24,3 +24,11 @@ class loadstore extends BlackBox with HasBlackBoxPath{
   })
   addPath("chisel/src/resources/DPI-C.sv")
 }
+
+class regRead extends BlackBox with HasBlackBoxPath{
+  val io = IO(new Bundle{
+    val valid = Input(Bool())
+    val regs_flat = Input(UInt((32*32).W))
+  })
+  addPath("chisel/src/resources/DPI-C.sv")
+}

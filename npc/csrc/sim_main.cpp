@@ -7,6 +7,10 @@
 #include <stdint.h>
 #include <stdio.h>
 
+void npc_quit(){
+  Verilated::gotFinish(true);
+}
+
 static uint8_t *pmem = NULL;
 void init_mem() {
   pmem = (uint8_t *)malloc(sizeof(uint32_t) * 0xFFFFFFFF);
@@ -98,12 +102,54 @@ extern "C" void ebreak(int exit_code){
     else
       printf("\033[1;31mNPC HIT BAD TRAP\033[0m\n");
   }
-  Verilated::gotFinish(true);
+  npc_quit();
 }
+
+const char *regs[] = {
+  "$0", "ra", "sp", "gp", "tp", "t0", "t1", "t2",
+  "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5",
+  "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7",
+  "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"
+};
+
+
+static uint32_t g_gpr[32];
+static bool regPrint = 1;
+extern "C" void regRead(uint32_t gpr[32]){
+  for(int i = 0;i < 8;i ++){
+    for(int j = 0;j < 4;j ++){
+      g_gpr[i*4+j] = gpr[i*4+j];
+      if(regPrint)
+        printf("%s = 0x%08x ",regs[i*4+j],gpr[i*4+j]);
+    }
+    if(regPrint)
+      printf("\n");
+  }
+}
+
+
 
 VTop* top;
 VerilatedContext* contextp;
 bool npcState = true;
+
+void isa_reg_display(){
+  top->io_regValid = 1;
+  top->eval();
+  top->io_regValid = 0;
+}
+
+uint32_t isa_reg_str2val(char* str){
+  regPrint = 0;
+  isa_reg_display();
+  regPrint = 1;
+  str++;
+  for(int i = 0;i < 32;i ++){
+    if(!strcmp(str,regs[i]))
+      return g_gpr[i];
+  }
+  return 0;
+}
 
 bool npc_exec(uint64_t n){
   // while(1){
@@ -127,7 +173,7 @@ bool npc_exec(uint64_t n){
   return 0;
 }
 
-
+void init_sdb();
 void sdb_mainloop();
 
 int main(int argc, char** argv) {
@@ -175,7 +221,6 @@ int main(int argc, char** argv) {
     top->reset = 0;
   }
 
-
   // while(1){
   //   wen = 1;
   //   us = get_time();
@@ -184,6 +229,7 @@ int main(int argc, char** argv) {
   //   top->clock = 1;
   //   top->eval();
   // }
+  init_sdb();
   sdb_mainloop();
   //top->io_inst = pmem_read(top->io_pc , 4);
   //printf("pc: %x 0x%08x\n",top->io_pc,top->io_inst);
