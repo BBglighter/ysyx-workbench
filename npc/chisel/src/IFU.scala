@@ -15,8 +15,13 @@ class IFU extends Module{
   lsDPI.io.waddr := 0.U
   lsDPI.io.wen   := false.B
   lsDPI.io.wmask := 0.U(32.W)
-  
+
   lsDPI.io.raddr := pc
   out.bits.pc := pc
   out.bits.instr := lsDPI.io.rdata
+  
+  val traceDPI = Module(new itrace())
+  traceDPI.io.valid := true.B
+  traceDPI.io.pc := pc
+  traceDPI.io.inst := lsDPI.io.rdata
 }

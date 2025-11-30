@@ -1,8 +1,6 @@
 #include <readline/readline.h>
 #include <readline/history.h>
-#include <stdlib.h>
-#include <stdint.h>
-
+#include "common.h"
 
 void init_regex();
 bool npc_exec(uint64_t n);
@@ -135,7 +133,6 @@ void sdb_mainloop() {
   }
 }
 
-void init_regex();
 void init_sdb() {
   /* Compile the regular expressions. */
   init_regex();

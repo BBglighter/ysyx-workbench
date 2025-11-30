@@ -1,10 +1,5 @@
 #include <regex.h>
-#include <stdint.h>
-#include <cassert>
-#include <string.h>
-#include <stdlib.h>
-#include <cstdio>
-#include <cstddef>
+#include "common.h"
 
 enum {
   TK_NOTYPE = 256, TK_EQ, TK_0_9, TK_BRACKETS_L, TK_BRACKETS_R, TK_HEX, TK_AND, TK_NEQ, TK_DEREF, TK_REG,

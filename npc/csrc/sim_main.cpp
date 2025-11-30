@@ -4,9 +4,10 @@
 
 // Include model header, generated from Verilating "top.v"
 #include "VTop.h"
-#include <stdint.h>
-#include <stdio.h>
+#include "common.h"
 
+
+FILE *fp = NULL;
 void npc_quit(){
   Verilated::gotFinish(true);
 }
@@ -104,6 +105,27 @@ extern "C" void ebreak(int exit_code){
   }
   npc_quit();
 }
+static char logbuf[128];
+static uint32_t lastpc;
+char enter = '\n';
+void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
+extern "C" void itrace(uint32_t pc,uint32_t instr){
+  memset(logbuf,0,128);
+  if(pc == lastpc) return;
+  lastpc = pc;
+  char *p = logbuf;
+  p += snprintf(p, sizeof(logbuf),"0x%08x:",pc);
+  uint8_t *inst = (uint8_t*)&instr;
+  for(int i = 0;i < 4;i ++){
+    p += snprintf(p, 4, " %02x",inst[i]);
+  }
+  int space_len = 1;
+  memset(p, ' ', space_len);
+  p += space_len;
+  disassemble(p, logbuf + sizeof(logbuf) - p, pc, (uint8_t *)&instr, 4);
+  fwrite(logbuf,1,strlen(logbuf),fp);
+  fwrite(&enter,1,1,fp);
+}
 
 const char *regs[] = {
   "$0", "ra", "sp", "gp", "tp", "t0", "t1", "t2",
@@ -152,13 +174,6 @@ uint32_t isa_reg_str2val(char* str){
 }
 
 bool npc_exec(uint64_t n){
-  // while(1){
-  //   us = get_time();
-  //   top->clock = 0;
-  //   top->eval();
-  //   top->clock = 1;
-  //   top->eval();
-  // }
   for(;n > 0;n --){
     if(contextp->gotFinish()) {return true;}
     wen = 1;
@@ -167,26 +182,25 @@ bool npc_exec(uint64_t n){
     top->eval();
     top->clock = 1;
     top->eval();
-    // tfp->dump(main_time);
-    // main_time++;
+    #ifdef TRACE
+      tfp->dump(main_time);
+      main_time++;
+    #endif
   }
   return 0;
 }
 
 void init_sdb();
 void sdb_mainloop();
+void init_disasm(); 
 
 int main(int argc, char** argv) {
-  // See a similar example walkthrough in the verilator manpage.
-
-  // This is intended to be a minimal example.  Before copying this to start a
-  // real project, it is better to start with a more complete example,
-  // e.g. examples/c_tracing.
-
+  init_disasm();
+  
+  fp = fopen("npc-log.txt","w");
   // Construct a VerilatedContext to hold simulation time, etc.
   contextp = new VerilatedContext;
 
-  // Pass arguments so Verilated code can see them, e.g. $value$plusargs
   // This needs to be called before you create any model
   contextp->commandArgs(argc, argv);
 
@@ -211,6 +225,7 @@ int main(int argc, char** argv) {
       M[count] = temp;
       count+=1;
   }
+
   // Simulate until $finish
   for(int i = 0;i < 1 ;i ++){
     top->reset = 1;
@@ -221,19 +236,8 @@ int main(int argc, char** argv) {
     top->reset = 0;
   }
 
-  // while(1){
-  //   wen = 1;
-  //   us = get_time();
-  //   top->clock = 0;
-  //   top->eval();
-  //   top->clock = 1;
-  //   top->eval();
-  // }
   init_sdb();
   sdb_mainloop();
-  //top->io_inst = pmem_read(top->io_pc , 4);
-  //printf("pc: %x 0x%08x\n",top->io_pc,top->io_inst);
-  // Evaluate model
 
   // Final model cleanup
   top->final();

@@ -32,3 +32,12 @@ class regRead extends BlackBox with HasBlackBoxPath{
   })
   addPath("chisel/src/resources/DPI-C.sv")
 }
+
+class itrace extends BlackBox with HasBlackBoxPath{
+  val io = IO(new Bundle{
+    val pc = Input(UInt(32.W))
+    val inst = Input(UInt(32.W))
+    val valid = Input(Bool())
+  })
+  addPath("chisel/src/resources/DPI-C.sv")
+}
