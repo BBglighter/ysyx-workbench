@@ -27,6 +27,7 @@ class loadstore extends BlackBox with HasBlackBoxPath{
 
 class regRead extends BlackBox with HasBlackBoxPath{
   val io = IO(new Bundle{
+    val pc = Input(UInt(32.W))
     val valid = Input(Bool())
     val regs_flat = Input(UInt((32*32).W))
   })
@@ -38,6 +39,16 @@ class itrace extends BlackBox with HasBlackBoxPath{
     val pc = Input(UInt(32.W))
     val inst = Input(UInt(32.W))
     val valid = Input(Bool())
+  })
+  addPath("chisel/src/resources/DPI-C.sv")
+}
+
+class ftrace extends BlackBox with HasBlackBoxPath{
+  val io = IO(new Bundle{
+    val call = Input(Bool())
+    val ret = Input(Bool())
+    val addr = Input(UInt(32.W))
+    val pc = Input(UInt(32.W))
   })
   addPath("chisel/src/resources/DPI-C.sv")
 }

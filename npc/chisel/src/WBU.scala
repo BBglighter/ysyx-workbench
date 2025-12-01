@@ -29,4 +29,18 @@ class WBU extends Module{
   out := in.bits.wbData.dnpc
 
   in.ready := true.B
+
+  val ftraceDPI = Module(new ftrace())
+  ftraceDPI.io.call := false.B
+  ftraceDPI.io.ret := false.B
+  ftraceDPI.io.addr := in.bits.wbData.dnpc
+  ftraceDPI.io.pc := in.bits.cf.pc
+
+  when(in.bits.idCtrl.brType === BranchType.jalr){
+    when(in.bits.cf.instr === "h00008067".U){
+      ftraceDPI.io.ret := true.B
+    }.otherwise{
+      ftraceDPI.io.call := true.B
+    }
+  }
 }

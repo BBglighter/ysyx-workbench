@@ -5,9 +5,18 @@
 // Include model header, generated from Verilating "top.v"
 #include "VTop.h"
 #include "common.h"
+#include "trace.h"
+#include "util.h"
+#include "difftest.h"
 
+// #define MTRACE
+#define FTRACE
+#define DIFFTEST
 
-FILE *fp = NULL;
+VTop* top;
+VerilatedContext* contextp;
+bool npcState = true;
+
 void npc_quit(){
   Verilated::gotFinish(true);
 }
@@ -69,17 +78,26 @@ uint64_t get_time() {
 #define RTC_ADDR 0x10000008
 static uint64_t us = get_time();
 extern "C" int pmem_read(uint32_t addr) {
+  uint32_t ret;
+  static uint32_t lastaddr = 0,lastdata = 0;
   if(addr == RTC_ADDR || addr == RTC_ADDR+4){
-    return (addr == RTC_ADDR) ? (uint32_t)(us & 0xFFFFFFFF) : (uint32_t)(us >> 32);
+    ret = (addr == RTC_ADDR) ? (uint32_t)(us & 0xFFFFFFFF) : (uint32_t)(us >> 32);
+  }else{
+    ret = host_read(guest_to_host(addr & ~0x3));
   }
-  uint32_t ret = host_read(guest_to_host(addr & ~0x3));
+  #ifdef MTRACE
+  if((addr != lastaddr || ret != lastdata) && addr != 0){
+    mtracePrint(addr,ret,0);
+    lastaddr = addr;
+    lastdata = ret;
+  }
+  #endif
   return ret;
 }
 
 static int wen = 1;
 extern "C" void pmem_write(int addr, int wmask, int data) {
   if(addr == 0x10000000){
-    putchar(data);
     return;
   }
   int bitc = 0;
@@ -89,6 +107,9 @@ extern "C" void pmem_write(int addr, int wmask, int data) {
       wmask = wmask >> 1;
     }
   if(wen){
+    #ifdef MTRACE
+    mtracePrint(addr,data,1);
+    #endif
     wen = 0;
     host_write(guest_to_host(addr),bitc, data);
   }
@@ -109,6 +130,8 @@ static char logbuf[128];
 static uint32_t lastpc;
 char enter = '\n';
 void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
+
+FILE *fp = NULL;
 extern "C" void itrace(uint32_t pc,uint32_t instr){
   memset(logbuf,0,128);
   if(pc == lastpc) return;
@@ -124,7 +147,7 @@ extern "C" void itrace(uint32_t pc,uint32_t instr){
   p += space_len;
   disassemble(p, logbuf + sizeof(logbuf) - p, pc, (uint8_t *)&instr, 4);
   fwrite(logbuf,1,strlen(logbuf),fp);
-  fwrite(&enter,1,1,fp);
+  ringIn(logbuf);
 }
 
 const char *regs[] = {
@@ -135,31 +158,42 @@ const char *regs[] = {
 };
 
 
-static uint32_t g_gpr[32];
+uint32_t g_gpr[32];
 static bool regPrint = 1;
-extern "C" void regRead(uint32_t gpr[32]){
+extern "C" void regRead(uint32_t gpr[32],uint32_t pc){
   for(int i = 0;i < 8;i ++){
     for(int j = 0;j < 4;j ++){
       g_gpr[i*4+j] = gpr[i*4+j];
       if(regPrint)
         printf("%s = 0x%08x ",regs[i*4+j],gpr[i*4+j]);
     }
-    if(regPrint)
-      printf("\n");
+    if(regPrint){
+      printf("pc = 0x%08x\n",pc);
+    }
   }
 }
-
-
-
-VTop* top;
-VerilatedContext* contextp;
-bool npcState = true;
 
 void isa_reg_display(){
   top->io_regValid = 1;
   top->eval();
   top->io_regValid = 0;
 }
+
+bool isa_difftest_checkregs(uint32_t *ref){
+  regPrint = 0;
+  isa_reg_display();
+  regPrint = 1;
+  for(int i = 0;i < 32;i ++){
+    if(ref[i] != g_gpr[i]){
+      printf(ANSI_FMT("npc_gpr[%d] (%08x) != nemu_gpr[%d] (%08x) \n", ANSI_FG_RED),i,g_gpr[i],i,ref[i]);
+      return false;
+    }
+  }
+  return true;
+}
+
+
+
 
 uint32_t isa_reg_str2val(char* str){
   regPrint = 0;
@@ -186,6 +220,10 @@ bool npc_exec(uint64_t n){
       tfp->dump(main_time);
       main_time++;
     #endif
+    
+    #ifdef DIFFTEST
+    difftest_step();
+    #endif
   }
   return 0;
 }
@@ -194,7 +232,14 @@ void init_sdb();
 void sdb_mainloop();
 void init_disasm(); 
 
+extern char* elf_file;
 int main(int argc, char** argv) {
+  parse_args(argc,argv);
+
+  #ifdef FTRACE
+  init_elf(elf_file);
+  #endif
+
   init_disasm();
   
   fp = fopen("npc-log.txt","w");
@@ -213,18 +258,26 @@ int main(int argc, char** argv) {
   tfp->open("wave.fst");
   uint64_t main_time = 0;
   init_mem();
-  uint32_t *M = (uint32_t *)pmem;
+  uint8_t *M = (uint8_t *)pmem;
   
   FILE * fp = fopen("/home/parano1d/ysyx-workbench/npc/obj_dir/test.bin","rb");
   uint64_t count = 0;
   uint32_t temp = 0;
   size_t n;
   M += 0x00000000;
-  while((n = fread(&temp,1,sizeof(uint32_t),fp)) > 0) {
-  // printf("0x%08x : 0x%08x\n",M+count,temp);
+  while((n = fread(&temp,1,sizeof(uint8_t),fp)) > 0) {
+  // printf("0x%08x : 0x%08xn",M+count,temp);
       M[count] = temp;
       count+=1;
   }
+  printf("%d\n",count);
+
+  //init difftest
+  static int difftest_port = 1234;
+  
+  #ifdef DIFFTEST
+  init_difftest(count,difftest_port);
+  #endif
 
   // Simulate until $finish
   for(int i = 0;i < 1 ;i ++){

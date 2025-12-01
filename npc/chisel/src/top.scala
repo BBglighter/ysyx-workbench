@@ -26,6 +26,7 @@ class Top extends Module{
   IDU.io.out <> EXU.in
   EXU.out <> LSU.in
   LSU.out <> WBU.in
+  RF.io.pc := reg_pc
   RF.io.read <> IDU.io.io_reg
   RF.io.write <> WBU.io_reg
   RF.io.valid := io.regValid

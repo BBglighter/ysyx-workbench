@@ -5,6 +5,7 @@ import chisel3.util._
 
 class Regfile extends Module{
   val io = IO(new Bundle{
+    val pc = Input(UInt(32.W))
     val valid = Input(Bool())
     val read = new RegRead
     val write = new RegWrite
@@ -23,4 +24,5 @@ class Regfile extends Module{
   io.halt_d := regs(10.U)
   readDPI.io.valid := io.valid
   readDPI.io.regs_flat := regs.asUInt
+  readDPI.io.pc := io.pc
 }

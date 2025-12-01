@@ -5,3 +5,4 @@
 #include <stdlib.h>
 #include <cstdio>
 #include <cstddef>
+#include <stdbool.h>
