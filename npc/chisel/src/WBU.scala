@@ -42,5 +42,7 @@ class WBU extends Module{
     }.otherwise{
       ftraceDPI.io.call := true.B
     }
+  }.elsewhen(in.bits.idCtrl.brType === BranchType.jal){
+    ftraceDPI.io.call := true.B 
   }
 }

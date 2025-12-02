@@ -13,7 +13,15 @@ class ALU extends Module{
 
   io.rlt := MuxLookup(io.aluOp, 0.U(4.W))(Seq(
     aluOp.ADD -> (io.val1 + io.val2),
-    aluOp.SUB -> (io.val1 + io.val2)
+    aluOp.SUB -> (io.val1 - io.val2),
+    aluOp.SRA -> (io.val1.asSInt >> io.val2(4,0)).asUInt,
+    aluOp.SRL -> (io.val1 >> io.val2(4,0)),
+    aluOp.SLL -> (io.val1 << io.val2(4,0)),
+    aluOp.AND -> (io.val1 & io.val2),
+    aluOp.SLT -> Mux((io.val1.asSInt < io.val2.asSInt), 1.U, 0.U),
+    aluOp.SLTU-> Mux((io.val1 < io.val2), 1.U, 0.U),
+    aluOp.XOR -> (io.val1 ^ io.val2),
+    aluOp.OR  -> (io.val1 | io.val2)
   ))
 
 }

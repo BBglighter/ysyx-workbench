@@ -5,9 +5,11 @@
 
 char *elf_file = NULL;
 char *diff_so_file = NULL;
+void set_batch_mode();
 int parse_args(int argc, char *argv[]) {
   const struct option table[] = {
     {"ftrace"   , required_argument, NULL, 'f'},
+    {"batch"    , no_argument      , NULL, 'b'},
     // {"diff"     , required_argument, NULL, 'd'},
     {0          , 0                , NULL,  0 },
   };
@@ -16,6 +18,7 @@ int parse_args(int argc, char *argv[]) {
     switch (o) {
       case 'f': elf_file = optarg; break;
       case 'd': diff_so_file = optarg; break;
+      case 'b': set_batch_mode(); break;
       // case 1: img_file = optarg; return 0;
       default:
         printf("Usage: %s [OPTION...] IMAGE [args]\n\n", argv[0]);

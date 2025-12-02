@@ -25,12 +25,16 @@ image: image-dep
 	@echo + OBJCOPY "->" $(IMAGE_REL).bin
 	@$(OBJCOPY) -S --set-section-flags .bss=alloc,contents -O binary $(IMAGE).elf $(IMAGE).bin
 
+ARGS += -f $(IMAGE).elf
+ifeq ($(BATCH), true)
+    ARGS += -b
+endif
 
 NPCFLAGS += -f $(IMAGE).elf 
 run: insert-arg
 	verilator -cc --exe --build --trace-fst  $(NPC_HOME)/vsrc/Top.sv $(wildcard $(NPC_HOME)/csrc/*.cpp) \
 		-LDFLAGS "-lreadline -lncurses" -CFLAGS "-I $(NEMU_HOME)/tools/capstone/repo/include"
 	cp $(IMAGE_REL).bin $(NPC_HOME)/obj_dir/test.bin 
-	./obj_dir/VTop -f $(IMAGE).elf
+	./obj_dir/VTop $(ARGS)  	
 
 .PHONY: insert-arg

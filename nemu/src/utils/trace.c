@@ -8,7 +8,8 @@ int pos = 0;
 int front = 0;
 int size = 0;
 void ringIn(char* str){
-  strncpy(ringbuffer[pos],str,strlen(str)+1);
+  // strncpy(ringbuffer[pos],str,strlen(str)+1);
+  snprintf(ringbuffer[pos], 128, "%s", str);
   if(size == 20){
     front = (front+1)%iringbufMax;
   }else{

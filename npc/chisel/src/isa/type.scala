@@ -13,6 +13,14 @@ object fuType{
 object aluOp{
   val ADD = "b0000".U(4.W)
   val SUB = "b0001".U(4.W)
+  val SRA = "b0010".U(4.W)
+  val SRL = "b0011".U(4.W)
+  val SLL = "b0100".U(4.W)
+  val AND = "b0101".U(4.W)
+  val SLT = "b0110".U(4.W)
+  val SLTU= "b0111".U(4.W)
+  val XOR = "b1000".U(4.W)
+  val OR  = "b1001".U(4.W)
   val none = "b1111".U(4.W)
 }
 
@@ -26,6 +34,13 @@ object srcType{
 object BranchType{
   val none = "b0000".U(4.W)
   val jalr = "b0001".U(4.W)
+  val jal  = "b0010".U(4.W)
+  val bne  = "b0011".U(4.W)
+  val beq  = "b0100".U(4.W)
+  val bge  = "b0101".U(4.W)
+  val bgeu = "b0110".U(4.W)
+  val blt  = "b0111".U(4.W)
+  val bltu = "b1000".U(4.W)
 }
 
 object ImmType{
@@ -42,6 +57,10 @@ object MemOpType{
   val none = 0.U(4.W)
   val lw = 1.U(4.W)
   val sw = 2.U(4.W)
-  val lbu = 3.U(4.W)
+  val lbu= 3.U(4.W)
   val sb = 4.U(4.W)
+  val sh = 5.U(4.W)
+  val lb = 6.U(4.W)
+  val lh = 7.U(4.W)
+  val lhu= 8.U(4.W)
 }

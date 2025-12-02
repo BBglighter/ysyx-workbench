@@ -27,22 +27,33 @@ class LSU extends Module{
 
   lsDPI.io.wmask := MuxLookup(in.bits.idCtrl.memType,0.U(32.W))(Seq(
     MemOpType.sw -> 15.U(32.W),
-    MemOpType.sb -> ((1.U) << (in.bits.exuData.wdata(1,0)))
+    MemOpType.sb -> ((1.U) << (in.bits.exuData.wdata(1,0))),
+    MemOpType.sh -> ((3.U) << (in.bits.exuData.wdata(1,0)))
   ))
 
 
-  val lbudata = Wire(UInt(32.W))
-  lbudata := 0.U
+  val lbdata = Wire(UInt(32.W))
+  lbdata := 0.U
   switch(in.bits.exuData.wdata(1,0)){
-    is(0.U) {lbudata := Cat(Fill(24,0.U),lsDPI.io.rdata(7,0))}
-    is(1.U) {lbudata := Cat(Fill(24,0.U),lsDPI.io.rdata(15,8))}
-    is(2.U) {lbudata := Cat(Fill(24,0.U),lsDPI.io.rdata(23,16))}
-    is(3.U) {lbudata := Cat(Fill(24,0.U),lsDPI.io.rdata(31,24))}
+    is(0.U) {lbdata := Cat(Fill(24,Mux(in.bits.idCtrl.memType === MemOpType.lbu,0.U,lsDPI.io.rdata(7))),lsDPI.io.rdata(7,0))}
+    is(1.U) {lbdata := Cat(Fill(24,Mux(in.bits.idCtrl.memType === MemOpType.lbu,0.U,lsDPI.io.rdata(15))),lsDPI.io.rdata(15,8))}
+    is(2.U) {lbdata := Cat(Fill(24,Mux(in.bits.idCtrl.memType === MemOpType.lbu,0.U,lsDPI.io.rdata(23))),lsDPI.io.rdata(23,16))}
+    is(3.U) {lbdata := Cat(Fill(24,Mux(in.bits.idCtrl.memType === MemOpType.lbu,0.U,lsDPI.io.rdata(31))),lsDPI.io.rdata(31,24))}
+  }
+
+  val lhdata = Wire(UInt(32.W))
+  lhdata := 0.U
+  switch(in.bits.exuData.wdata(1,0)){
+    is(0.U) {lhdata := Cat(Fill(24,Mux(in.bits.idCtrl.memType === MemOpType.lhu,0.U,lsDPI.io.rdata(15))),lsDPI.io.rdata(15,0))}
+    is(2.U) {lhdata := Cat(Fill(24,Mux(in.bits.idCtrl.memType === MemOpType.lhu,0.U,lsDPI.io.rdata(31))),lsDPI.io.rdata(31,16))}
   }
 
   out.bits.wbData.wdata := MuxLookup(in.bits.idCtrl.memType,in.bits.exuData.wdata)(Seq(
     MemOpType.lw -> lsDPI.io.rdata,
-    MemOpType.lbu -> lbudata
+    MemOpType.lbu -> lbdata,
+    MemOpType.lb  -> lbdata,
+    MemOpType.lh  -> lhdata,
+    MemOpType.lhu -> lhdata
   ))
 
   out.bits.cf <> in.bits.cf

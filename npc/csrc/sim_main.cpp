@@ -9,16 +9,20 @@
 #include "util.h"
 #include "difftest.h"
 
+// #define TRACE
 // #define MTRACE
-#define FTRACE
-#define DIFFTEST
+// #define FTRACE
+// #define DIFFTEST
 
 VTop* top;
 VerilatedContext* contextp;
+VerilatedFstC* tfp; 
 bool npcState = true;
 
 void npc_quit(){
   Verilated::gotFinish(true);
+  top->final();
+  tfp->close();
 }
 
 static uint8_t *pmem = NULL;
@@ -98,6 +102,7 @@ extern "C" int pmem_read(uint32_t addr) {
 static int wen = 1;
 extern "C" void pmem_write(int addr, int wmask, int data) {
   if(addr == 0x10000000){
+    putchar(data);
     return;
   }
   int bitc = 0;
@@ -121,18 +126,25 @@ extern "C" void ebreak(int exit_code){
     flag = 1;
     if(!exit_code)
       printf("\033[1;32mNPC HIT GOOD TRAP\033[0m\n");
-    else
+    else{
       printf("\033[1;31mNPC HIT BAD TRAP\033[0m\n");
+    }
   }
   npc_quit();
+  assert(!exit_code);
 }
 static char logbuf[128];
+static char difftestbuf[128]; //locate the last inst
 static uint32_t lastpc;
 char enter = '\n';
 void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
 
 FILE *fp = NULL;
+
+
 extern "C" void itrace(uint32_t pc,uint32_t instr){
+  #ifdef TRACE
+  strcpy(difftestbuf,logbuf);
   memset(logbuf,0,128);
   if(pc == lastpc) return;
   lastpc = pc;
@@ -148,7 +160,9 @@ extern "C" void itrace(uint32_t pc,uint32_t instr){
   disassemble(p, logbuf + sizeof(logbuf) - p, pc, (uint8_t *)&instr, 4);
   fwrite(logbuf,1,strlen(logbuf),fp);
   ringIn(logbuf);
+  #endif
 }
+
 
 const char *regs[] = {
   "$0", "ra", "sp", "gp", "tp", "t0", "t1", "t2",
@@ -161,6 +175,7 @@ const char *regs[] = {
 uint32_t g_gpr[32];
 static bool regPrint = 1;
 extern "C" void regRead(uint32_t gpr[32],uint32_t pc){
+  if(regPrint)printf("pc = 0x%08x\n",pc);
   for(int i = 0;i < 8;i ++){
     for(int j = 0;j < 4;j ++){
       g_gpr[i*4+j] = gpr[i*4+j];
@@ -168,7 +183,7 @@ extern "C" void regRead(uint32_t gpr[32],uint32_t pc){
         printf("%s = 0x%08x ",regs[i*4+j],gpr[i*4+j]);
     }
     if(regPrint){
-      printf("pc = 0x%08x\n",pc);
+      printf("\n");
     }
   }
 }
@@ -185,6 +200,7 @@ bool isa_difftest_checkregs(uint32_t *ref){
   regPrint = 1;
   for(int i = 0;i < 32;i ++){
     if(ref[i] != g_gpr[i]){
+      printf("wrong inst : %s",difftestbuf);
       printf(ANSI_FMT("npc_gpr[%d] (%08x) != nemu_gpr[%d] (%08x) \n", ANSI_FG_RED),i,g_gpr[i],i,ref[i]);
       return false;
     }
@@ -239,10 +255,12 @@ int main(int argc, char** argv) {
   #ifdef FTRACE
   init_elf(elf_file);
   #endif
-
-  init_disasm();
   
+  #ifdef TRACE
+  init_disasm();
   fp = fopen("npc-log.txt","w");
+  #endif
+  
   // Construct a VerilatedContext to hold simulation time, etc.
   contextp = new VerilatedContext;
 
@@ -253,7 +271,7 @@ int main(int argc, char** argv) {
   top = new VTop{contextp};
   
   Verilated::traceEverOn(true);
-  VerilatedFstC* tfp = new VerilatedFstC;
+  tfp = new VerilatedFstC;
   top->trace(tfp, 99);
   tfp->open("wave.fst");
   uint64_t main_time = 0;
@@ -270,7 +288,6 @@ int main(int argc, char** argv) {
       M[count] = temp;
       count+=1;
   }
-  printf("%d\n",count);
 
   //init difftest
   static int difftest_port = 1234;
@@ -293,8 +310,6 @@ int main(int argc, char** argv) {
   sdb_mainloop();
 
   // Final model cleanup
-  top->final();
-  tfp->close();
 
   // Destroy model
   delete top;
