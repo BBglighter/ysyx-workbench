@@ -118,6 +118,10 @@ void dtrace(const char *name,uint32_t addr){
   }
 }
 
+void etrace(vaddr_t pc,word_t mcause){
+  printf("pc : %08x | mcause : %d\n",pc,mcause);
+}
+
 
 
 
