@@ -278,7 +278,7 @@ int main(int argc, char** argv) {
   init_mem();
   uint8_t *M = (uint8_t *)pmem;
   
-  FILE * fp = fopen("/home/parano1d/ysyx-workbench/npc/obj_dir/test.bin","rb");
+  FILE * fp = fopen("/home/parano1d/ysyx-workbench/npc/test.bin","rb");
   uint64_t count = 0;
   uint32_t temp = 0;
   size_t n;
