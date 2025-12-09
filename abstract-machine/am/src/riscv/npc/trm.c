@@ -1,5 +1,6 @@
 #include <am.h>
 #include <klib-macros.h>
+#include <klib.h>
 
 extern char _heap_start;
 int main(const char *args);
@@ -23,7 +24,23 @@ void halt(int code) {
   while (1);
 }
 
+void read_csr() {
+  unsigned long mvendorid;
+  unsigned long marchid;
+
+  asm volatile("csrr %0, mvendorid" : "=r"(mvendorid));
+    
+  asm volatile("csrr %0, marchid" : "=r"(marchid));
+    
+  for(int i = 0;i < 4;i ++){
+    char c = mvendorid >> (24 - i*8);
+    printf("%c",c);
+  }
+    printf("_%d\n", marchid);
+}
+
 void _trm_init() {
+  read_csr();
   int ret = main(mainargs);
   halt(ret);
 }

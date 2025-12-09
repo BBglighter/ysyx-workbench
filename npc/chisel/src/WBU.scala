@@ -11,12 +11,10 @@ class WBU extends Module{
   val rd = Wire(UInt(5.W))
   rd := in.bits.cf.instr(11,7)
  
-  val wb = Wire(UInt(32.W))
-  wb := in.bits.wbData.wdata
 
   //Default
   io_reg.waddr := rd
-  io_reg.wdata := wb
+  io_reg.wdata := Mux(in.bits.idCtrl.immType === ImmType.iCSR, in.bits.wbData.csr, in.bits.wbData.wdata)
   io_reg.wen   := false.B
   halt := false.B
 
@@ -45,4 +43,15 @@ class WBU extends Module{
   }.elsewhen(in.bits.idCtrl.brType === BranchType.jal){
     ftraceDPI.io.call := true.B 
   }
+  
+  io_reg.csraddr := Mux(in.bits.idCtrl.immType === ImmType.iCSR,in.bits.cf.instr(31,20),0.U(12.W))
+  io_reg.csrdata := in.bits.wbData.wdata
+  
+  when(in.bits.idCtrl.fuType === fuType.ecall){
+    io_reg.csraddr := "h341".U(12.W)
+    io_reg.csrdata := in.bits.cf.pc 
+    out := in.bits.wbData.csr 
+  }.elsewhen(in.bits.idCtrl.fuType === fuType.mret){
+    out := in.bits.wbData.csr
+  } 
 }

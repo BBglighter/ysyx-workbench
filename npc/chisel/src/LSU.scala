@@ -59,6 +59,7 @@ class LSU extends Module{
   out.bits.cf <> in.bits.cf
   out.bits.idCtrl <> in.bits.idCtrl
   out.bits.wbData.dnpc := in.bits.exuData.dnpc
+  out.bits.wbData.csr := in.bits.exuData.csr
   
   in.ready := out.ready
   out.valid := in.valid

@@ -21,7 +21,8 @@ class ALU extends Module{
     aluOp.SLT -> Mux((io.val1.asSInt < io.val2.asSInt), 1.U, 0.U),
     aluOp.SLTU-> Mux((io.val1 < io.val2), 1.U, 0.U),
     aluOp.XOR -> (io.val1 ^ io.val2),
-    aluOp.OR  -> (io.val1 | io.val2)
+    aluOp.OR  -> (io.val1 | io.val2),
+    aluOp.CSR -> io.val1
   ))
 
 }

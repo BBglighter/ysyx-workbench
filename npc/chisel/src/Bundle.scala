@@ -23,18 +23,23 @@ class RegRead extends Bundle{
   val rdata2 = Output(UInt(32.W))
   val raddr1 = Input(UInt(5.W))
   val raddr2 = Input(UInt(5.W))
+  val csraddr = Input(UInt(12.W))
+  val csrdata = Output(UInt(32.W))
 }
 
 class RegWrite extends Bundle{
   val wen = Input(Bool())
   val waddr = Input(UInt(5.W))
   val wdata = Input(UInt(32.W))
+  val csraddr = Input(UInt(12.W))
+  val csrdata = Input(UInt(32.W))
 }
 
 class DataSrcIO extends Bundle {
   val src1 = Output(UInt(32.W))
   val src2 = Output(UInt(32.W))
-  val imm  = Output(UInt(32.W)) 
+  val imm  = Output(UInt(32.W))
+  val csr  = Output(UInt(32.W))
 }
 
 class ID2EX extends Bundle{
@@ -46,6 +51,7 @@ class ID2EX extends Bundle{
 class EXUdata extends Bundle{
   val dnpc = Output(UInt(32.W))
   val wdata = Output(UInt(32.W))
+  val csr = Output(UInt(32.W))
 }
 
 class EX2LS extends Bundle{
@@ -59,4 +65,15 @@ class LS2WB extends Bundle{
   val cf = new ctrlFlowIO
   val idCtrl = new decodeCtrl
   val wbData = new EXUdata
+}
+
+class regCSR extends Bundle{
+  val mcycle  = Input(UInt(32.W))
+  val mcycleh = Input(UInt(32.W))
+  val mvendorid = Input(UInt(32.W))
+  val marchid = Input(UInt(32.W))
+  val mepc = Input(UInt(32.W))
+  val mtvec = Input(UInt(32.W))
+  val mcause = Input(UInt(32.W))
+  val mstatus = Input(UInt(32.W))
 }

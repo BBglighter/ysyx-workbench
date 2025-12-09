@@ -15,6 +15,10 @@ int printf(const char *fmt, ...) {
       s++;
       switch (fmt[s])
       {
+      case 'c':
+        char c = va_arg(ap,int);
+        putch(c);
+        break;
       case 'd':
         num = va_arg(ap,int);
         if(num == 0){

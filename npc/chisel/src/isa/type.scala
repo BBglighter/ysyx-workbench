@@ -8,6 +8,8 @@ object fuType{
   val bru = "b0001".U(4.W)
   val lsu = "b0010".U(4.W)
   val ebreak = "b0011".U(4.W)
+  val ecall = "b0100".U(4.W)
+  val mret = "b0101".U(4.W)
 }
 
 object aluOp{
@@ -21,14 +23,16 @@ object aluOp{
   val SLTU= "b0111".U(4.W)
   val XOR = "b1000".U(4.W)
   val OR  = "b1001".U(4.W)
+  val CSR = "b1010".U(4.W)
   val none = "b1111".U(4.W)
 }
 
 object srcType{
-  val reg = "b00".U(2.W)
-  val imm = "b01".U(2.W)
-  val pc  = "b10".U(2.W)
-  val none = "b11".U(2.W)
+  val reg = "b000".U(3.W)
+  val imm = "b001".U(3.W)
+  val pc  = "b010".U(3.W)
+  val none = "b011".U(3.W)
+  val csr = "b100".U(3.W)
 }
 
 object BranchType{
@@ -50,7 +54,8 @@ object ImmType{
   val immB = "b011".U(3.W)
   val immU = "b100".U(3.W)
   val immJ = "b101".U(3.W)
-  val none = "b110".U(3.W)
+  val iCSR = "b110".U(3.W)
+  val none = "b111".U(3.W)
 }
 
 object MemOpType{
@@ -63,4 +68,15 @@ object MemOpType{
   val lb = 6.U(4.W)
   val lh = 7.U(4.W)
   val lhu= 8.U(4.W)
+}
+
+object CSR{
+  val mcycle = "hb00".U(12.W)
+  val mcycleh= "hb80".U(12.W)
+  val mvendorid = "hf11".U(12.W)
+  val marchid= "hf12".U(12.W)
+  val mstatus = "h300".U(12.W)
+  val mepc = "h341".U(12.W)
+  val mtvec = "h305".U(12.W)
+  val mcause = "h342".U(12.W)
 }

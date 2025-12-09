@@ -12,7 +12,7 @@
 // #define TRACE
 // #define MTRACE
 // #define FTRACE
-// #define DIFFTEST
+//#define DIFFTEST
 
 VTop* top;
 VerilatedContext* contextp;
@@ -233,6 +233,7 @@ bool npc_exec(uint64_t n){
     top->clock = 1;
     top->eval();
     #ifdef TRACE
+      static uint64_t main_time = 0;
       tfp->dump(main_time);
       main_time++;
     #endif
@@ -274,7 +275,6 @@ int main(int argc, char** argv) {
   tfp = new VerilatedFstC;
   top->trace(tfp, 99);
   tfp->open("wave.fst");
-  uint64_t main_time = 0;
   init_mem();
   uint8_t *M = (uint8_t *)pmem;
   

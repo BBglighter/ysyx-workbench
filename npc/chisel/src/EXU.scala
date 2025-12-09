@@ -9,15 +9,18 @@ class EXU extends Module{
 
   val alu = Module(new RV32I.ALU())
   val bru = Module(new RV32I.BRU())
-  
+
+
   alu.io.val1 := MuxLookup(in.bits.idCtrl.immType,0.U)(Seq(
     ImmType.immR -> in.bits.data.src1,
     ImmType.immI -> in.bits.data.src1,
+    ImmType.iCSR -> in.bits.data.src1,
     ImmType.immS -> in.bits.data.src1,
     ImmType.immU -> in.bits.data.src1
     ))
   alu.io.val2 := MuxLookup(in.bits.idCtrl.immType,0.U)(Seq(
     ImmType.immR -> in.bits.data.src2,
+    ImmType.iCSR -> in.bits.data.src2,
     ImmType.immI -> in.bits.data.imm,
     ImmType.immS -> in.bits.data.imm,
     ImmType.immU -> in.bits.data.imm
@@ -30,6 +33,8 @@ class EXU extends Module{
   bru.io.pc := in.bits.cf.pc
   bru.io.BranchType := in.bits.idCtrl.brType
   
+  out.bits.exuData.csr := in.bits.data.csr
+
   out.bits.exuData.wdata := MuxLookup(in.bits.idCtrl.fuType, 0.U(32.W))(Seq(
     fuType.alu -> alu.io.rlt,
     fuType.bru -> bru.io.rlt,

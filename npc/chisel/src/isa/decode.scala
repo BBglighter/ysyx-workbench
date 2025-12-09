@@ -49,6 +49,8 @@ object DecodeTable{
     inst.sh   -> List(fuType.lsu,aluOp.ADD,srcType.reg,srcType.reg,ImmType.immS,BranchType.none,MemOpType.sh),
 
     inst.ebreak -> List(fuType.ebreak,aluOp.none,srcType.none,srcType.none,ImmType.none,BranchType.none,MemOpType.none),
+    inst.ecall  -> List(fuType.ecall,aluOp.none,srcType.none,srcType.none,ImmType.none,BranchType.none,MemOpType.none),
+    inst.mret  -> List(fuType.mret,aluOp.none,srcType.none,srcType.none,ImmType.none,BranchType.none,MemOpType.none),
     inst.jal  -> List(fuType.bru,aluOp.none,srcType.none,srcType.none,ImmType.immJ,BranchType.jal,MemOpType.none),
     inst.auipc ->List(fuType.alu,aluOp.ADD,srcType.pc,srcType.none,ImmType.immU,BranchType.none,MemOpType.none),
     //B-type
@@ -57,7 +59,10 @@ object DecodeTable{
     inst.bge ->List(fuType.bru,aluOp.none,srcType.reg,srcType.reg,ImmType.immB,BranchType.bge,MemOpType.none),
     inst.bgeu->List(fuType.bru,aluOp.none,srcType.reg,srcType.reg,ImmType.immB,BranchType.bgeu,MemOpType.none),
     inst.blt ->List(fuType.bru,aluOp.none,srcType.reg,srcType.reg,ImmType.immB,BranchType.blt,MemOpType.none),
-    inst.bltu->List(fuType.bru,aluOp.none,srcType.reg,srcType.reg,ImmType.immB,BranchType.bltu,MemOpType.none)
+    inst.bltu->List(fuType.bru,aluOp.none,srcType.reg,srcType.reg,ImmType.immB,BranchType.bltu,MemOpType.none),
+    
+    inst.csrrs->List(fuType.alu,aluOp.OR,srcType.reg,srcType.csr,ImmType.iCSR,BranchType.none,MemOpType.none),
+    inst.csrrw->List(fuType.alu,aluOp.CSR,srcType.reg,srcType.csr,ImmType.iCSR,BranchType.none,MemOpType.none)
   )
 }
 
