@@ -14,12 +14,20 @@ class halt() extends BlackBox with HasBlackBoxPath {
 
 class loadstore extends BlackBox with HasBlackBoxPath{
   val io = IO(new Bundle{
+    val clock = Input(Clock())
     val wen = Input(Bool())
-    val valid = Input(Bool())
-    val raddr = Input(UInt(32.W))
+    val addr = Input(UInt(32.W))
     val wdata = Input(UInt(32.W))
-    val waddr = Input(UInt(32.W))
     val wmask = Input(UInt(32.W))
+    val rdata = Output(UInt(32.W))
+  })
+  addPath("chisel/src/resources/DPI-C.sv")
+}
+
+class ifu_inst extends BlackBox with HasBlackBoxPath{
+  val io = IO(new Bundle{
+    val clock = Input(Clock())
+    val raddr = Input(UInt(32.W))
     val rdata = Output(UInt(32.W))
   })
   addPath("chisel/src/resources/DPI-C.sv")

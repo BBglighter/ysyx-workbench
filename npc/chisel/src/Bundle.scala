@@ -6,6 +6,7 @@ import chisel3.util._
 class ctrlFlowIO extends Bundle{
   val pc = Output(UInt(32.W))
   val instr = Output(UInt(32.W))
+  val wen = Output(Bool())
 }
 
 class decodeCtrl extends Bundle{
@@ -65,6 +66,7 @@ class LS2WB extends Bundle{
   val cf = new ctrlFlowIO
   val idCtrl = new decodeCtrl
   val wbData = new EXUdata
+  val load = Output(Bool())
 }
 
 class regCSR extends Bundle{

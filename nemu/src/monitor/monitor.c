@@ -24,6 +24,8 @@ void init_difftest(char *ref_so_file, long img_size, int port);
 void init_device();
 void init_sdb();
 void init_disasm();
+void init_map();
+void init_timer();
 
 static void welcome() {
   Log("Trace: %s", MUXDEF(CONFIG_TRACE, ANSI_FMT("ON", ANSI_FG_GREEN), ANSI_FMT("OFF", ANSI_FG_RED)));
@@ -99,6 +101,11 @@ static int parse_args(int argc, char *argv[]) {
     }
   }
   return 0;
+}
+
+void init_difftest_ref() {
+  init_map();
+  init_timer();
 }
 
 void init_monitor(int argc, char *argv[]) {

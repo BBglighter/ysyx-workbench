@@ -40,7 +40,7 @@ void read_csr() {
 }
 
 void _trm_init() {
-  read_csr();
+  //read_csr();
   int ret = main(mainargs);
   halt(ret);
 }

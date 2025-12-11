@@ -8,19 +8,17 @@ class LSU extends Module{
   val out = IO(Decoupled(new LS2WB))
 
   val lsDPI = Module(new loadstore())
-  lsDPI.io.raddr := 0.U
-  lsDPI.io.valid := false.B
+  lsDPI.io.clock := clock
+  lsDPI.io.addr := 0.U
   lsDPI.io.wdata := 0.U
-  lsDPI.io.waddr := 0.U
   lsDPI.io.wen   := false.B
-  when(in.bits.idCtrl.fuType === fuType.lsu){
-    lsDPI.io.valid := true.B
+  when(in.bits.idCtrl.fuType === fuType.lsu && in.bits.cf.wen){
     when(in.bits.idCtrl.immType === ImmType.immS){
       lsDPI.io.wen := true.B
-      lsDPI.io.waddr := in.bits.data.src1 + in.bits.data.imm
+      lsDPI.io.addr := in.bits.data.src1 + in.bits.data.imm
       lsDPI.io.wdata := in.bits.data.src2
     }.otherwise{
-    lsDPI.io.raddr := in.bits.exuData.wdata
+    lsDPI.io.addr := in.bits.exuData.wdata
     }
   }
 
@@ -46,6 +44,24 @@ class LSU extends Module{
   switch(in.bits.exuData.wdata(1,0)){
     is(0.U) {lhdata := Cat(Fill(24,Mux(in.bits.idCtrl.memType === MemOpType.lhu,0.U,lsDPI.io.rdata(15))),lsDPI.io.rdata(15,0))}
     is(2.U) {lhdata := Cat(Fill(24,Mux(in.bits.idCtrl.memType === MemOpType.lhu,0.U,lsDPI.io.rdata(31))),lsDPI.io.rdata(31,16))}
+  }
+
+  out.bits.load := MuxLookup(in.bits.idCtrl.memType,false.B)(Seq(
+    MemOpType.lw  -> true.B,
+    MemOpType.lbu -> true.B,
+    MemOpType.lb  -> true.B,
+    MemOpType.lh  -> true.B,
+    MemOpType.lhu -> true.B
+  ))
+  val notload :: p1 :: p2 :: Nil = Enum(3)
+  val state = RegInit(notload)
+  state := MuxLookup(state,notload)(List(
+    notload -> Mux(out.bits.load, p1, notload),
+    p1      -> p2,
+    p2      -> notload
+    ))
+  when(state === p2){
+    out.bits.load := false.B
   }
 
   out.bits.wbData.wdata := MuxLookup(in.bits.idCtrl.memType,in.bits.exuData.wdata)(Seq(

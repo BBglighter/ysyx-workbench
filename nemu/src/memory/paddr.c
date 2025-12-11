@@ -17,6 +17,7 @@
 #include <memory/paddr.h>
 #include <device/mmio.h>
 #include <isa.h>
+#include <utils.h>
 
 #if   defined(CONFIG_PMEM_MALLOC)
 static uint8_t *pmem = NULL;
@@ -59,9 +60,21 @@ void init_mem() {
   Log("physical memory area [" FMT_PADDR ", " FMT_PADDR "]", PMEM_LEFT, PMEM_RIGHT);
 }
 
+#define RTC_ADDR 0x10000008
 word_t paddr_read(paddr_t addr, int len) {
   if (likely(in_pmem(addr))) return pmem_read(addr, len);
   IFDEF(CONFIG_DEVICE, return mmio_read(addr, len));
+  if(addr == RTC_ADDR || addr == RTC_ADDR+4){
+    printf("test\n");
+    return mmio_read(addr, len);
+  }
+  // #ifdef DIFFTEST_REF
+  // if(addr == RTC_ADDR || addr == RTC_ADDR+4){
+  //   us = get_time();
+  //   printf("%lx\n",us);
+  //   return (addr == RTC_ADDR) ? (uint32_t)(us & 0xFFFFFFFF) : (uint32_t)(us >> 32);
+  // }
+  // #endif
   out_of_bound(addr);
   return 0;
 }

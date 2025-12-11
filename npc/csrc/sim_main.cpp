@@ -9,20 +9,29 @@
 #include "util.h"
 #include "difftest.h"
 
+#define FST
 // #define TRACE
 // #define MTRACE
 // #define FTRACE
-//#define DIFFTEST
+// #define DIFFTEST
 
 VTop* top;
 VerilatedContext* contextp;
 VerilatedFstC* tfp; 
 bool npcState = true;
 
+static uint64_t runtime;
+static uint64_t main_time = 0;
+
 void npc_quit(){
+  #ifdef FST
+    tfp->dump(main_time);
+    main_time++;
+  #endif
   Verilated::gotFinish(true);
   top->final();
   tfp->close();
+  printf("npc end with %ld period\n",runtime);
 }
 
 static uint8_t *pmem = NULL;
@@ -41,7 +50,6 @@ static inline uint32_t host_read(void *addr) {
 }
 
 static inline void host_write(void *addr, int len, int data) {
-  // printf("0x%08x 0x%08x\n",addr,*(uint32_t *)addr);
   switch (len) {
     case 1: *(uint8_t  *)addr = data; return;
     case 2: *(uint16_t *)addr = data; return;
@@ -89,6 +97,7 @@ extern "C" int pmem_read(uint32_t addr) {
   }else{
     ret = host_read(guest_to_host(addr & ~0x3));
   }
+  // printf("0x%08x 0x%08x\n",addr,ret);
   #ifdef MTRACE
   if((addr != lastaddr || ret != lastdata) && addr != 0){
     mtracePrint(addr,ret,0);
@@ -116,6 +125,7 @@ extern "C" void pmem_write(int addr, int wmask, int data) {
     mtracePrint(addr,data,1);
     #endif
     wen = 0;
+    // printf("0x%08x 0x%08x\n",addr,data);
     host_write(guest_to_host(addr),bitc, data);
   }
 }
@@ -232,14 +242,15 @@ bool npc_exec(uint64_t n){
     top->eval();
     top->clock = 1;
     top->eval();
-    #ifdef TRACE
-      static uint64_t main_time = 0;
+    runtime++;
+    #ifdef FST
       tfp->dump(main_time);
       main_time++;
     #endif
     
     #ifdef DIFFTEST
-    difftest_step();
+    if(top->io_difftest)
+      difftest_step();
     #endif
   }
   return 0;
@@ -304,6 +315,10 @@ int main(int argc, char** argv) {
     top->clock = 1;
     top->eval();
     top->reset = 0;
+    #ifdef FST
+      tfp->dump(main_time);
+      main_time++;
+    #endif
   }
 
   init_sdb();
