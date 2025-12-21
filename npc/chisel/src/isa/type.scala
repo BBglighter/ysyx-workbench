@@ -10,6 +10,7 @@ object fuType{
   val ebreak = "b0011".U(4.W)
   val ecall = "b0100".U(4.W)
   val mret = "b0101".U(4.W)
+  val none = "b0110".U(4.W)
 }
 
 object aluOp{

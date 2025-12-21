@@ -6,7 +6,7 @@ import chisel3.util._
 object DecodeTable{
   //fuType,src1Type,src2Type,brType
   val default: List[UInt] = List(
-    fuType.alu,
+    fuType.none,
     aluOp.ADD,
     srcType.reg,
     srcType.reg,

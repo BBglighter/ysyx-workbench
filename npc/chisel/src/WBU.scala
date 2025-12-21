@@ -6,11 +6,13 @@ import chisel3.util._
 class WBU extends Module{
   val in = IO(Flipped(Decoupled(new LS2WB)))
   val out = IO(Output(UInt(32.W)))
+  val nullinst = IO(Output(Bool()))
   val halt = IO(Output(Bool()))
   val io_reg = IO(Flipped(new RegWrite))
   val rd = Wire(UInt(5.W))
   rd := in.bits.cf.instr(11,7)
  
+  nullinst := Mux(in.bits.idCtrl.fuType === fuType.none,true.B,false.B)
 
   val s_load :: s_over :: Nil = Enum(2)
   val state = RegInit(s_load)
@@ -36,7 +38,7 @@ class WBU extends Module{
   
   out := Mux((in.bits.cf.wen&&loadover)||(loadover&&in.bits.load),in.bits.wbData.dnpc,in.bits.cf.pc)
 
-  in.ready := true.B
+  in.ready := (in.bits.cf.wen&&in.bits.load)
 
   val ftraceDPI = Module(new ftrace())
   ftraceDPI.io.call := false.B
@@ -54,14 +56,14 @@ class WBU extends Module{
     ftraceDPI.io.call := true.B 
   }
   
-  io_reg.csraddr := Mux(in.bits.idCtrl.immType === ImmType.iCSR,in.bits.cf.instr(31,20),0.U(12.W))
+  io_reg.csraddr := Mux((in.bits.idCtrl.immType === ImmType.iCSR&&in.bits.cf.wen),in.bits.cf.instr(31,20),0.U(12.W))
   io_reg.csrdata := in.bits.wbData.wdata
   
-  when(in.bits.idCtrl.fuType === fuType.ecall){
+  when(in.bits.idCtrl.fuType === fuType.ecall && in.bits.cf.wen){
     io_reg.csraddr := "h341".U(12.W)
     io_reg.csrdata := in.bits.cf.pc 
     out := in.bits.wbData.csr 
-  }.elsewhen(in.bits.idCtrl.fuType === fuType.mret){
+  }.elsewhen(in.bits.idCtrl.fuType === fuType.mret && in.bits.cf.wen){
     out := in.bits.wbData.csr
   } 
 }

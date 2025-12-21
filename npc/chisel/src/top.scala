@@ -21,11 +21,20 @@ class Top extends Module{
   val WBU = Module(new WBU())
   val RF = Module(new Regfile())
 
+  val axi4bus = Module(new axi4Arbiter())
+  val xbar    = Module(new Xbar())
+  axi4bus.io.bus1 <> LSU.axibus 
+  axi4bus.io.bus1sel := LSU.axisel
+  axi4bus.io.bus2 <> IFU.io.axibus 
+  axi4bus.io.bus2sel := IFU.io.axisel
+  axi4bus.io.out <> xbar.io.in
+
   reg_inst := IFU.io.out.bits.instr
   io.debugPc := WBU.out
   reg_pc := WBU.out
-  io.difftest := Mux((reg_inst === IFU.io.out.bits.instr)&&(!WBU.in.bits.load),true.B,false.B)
+  io.difftest := Mux((WBU.nullinst && (reg_pc=/=0x80000000L.U)),true.B,false.B)
   IFU.io.pc := reg_pc
+  IFU.io.loadinst := LSU.out.bits.load
   IFU.io.out <> IDU.io.in
   IDU.io.out <> EXU.in
   EXU.out <> LSU.in

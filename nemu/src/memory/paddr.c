@@ -64,10 +64,10 @@ void init_mem() {
 word_t paddr_read(paddr_t addr, int len) {
   if (likely(in_pmem(addr))) return pmem_read(addr, len);
   IFDEF(CONFIG_DEVICE, return mmio_read(addr, len));
-  if(addr == RTC_ADDR || addr == RTC_ADDR+4){
-    printf("test\n");
-    return mmio_read(addr, len);
-  }
+  // if(addr == RTC_ADDR || addr == RTC_ADDR+4){
+  //   printf("test\n");
+  //   return mmio_read(addr, len);
+  // }
   // #ifdef DIFFTEST_REF
   // if(addr == RTC_ADDR || addr == RTC_ADDR+4){
   //   us = get_time();

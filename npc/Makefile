@@ -11,6 +11,7 @@ verilog:
 	$(call git_commit, "generate verilog")
 	mkdir -p ./vsrc
 	$(mill) -i $(PRJ).runMain Elaborate --target-dir ./vsrc
+	ex -sc '$$-1,$$d|x' ./vsrc/Top.sv
 
 help:
 	$(mill) -i $(PRJ).runMain Elaborate --help

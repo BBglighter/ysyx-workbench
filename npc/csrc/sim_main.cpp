@@ -9,7 +9,7 @@
 #include "util.h"
 #include "difftest.h"
 
-#define FST
+// #define FST
 // #define TRACE
 // #define MTRACE
 // #define FTRACE
@@ -262,6 +262,7 @@ void init_disasm();
 
 extern char* elf_file;
 int main(int argc, char** argv) {
+  setvbuf(stdout, NULL, _IONBF, 0);
   parse_args(argc,argv);
 
   #ifdef FTRACE
