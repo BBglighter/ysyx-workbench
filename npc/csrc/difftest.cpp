@@ -10,13 +10,14 @@ extern "C" void ebreak(int exit_code);
 void isa_reg_display() ;
 bool isa_difftest_checkregs(uint32_t *ref);
 enum { DIFFTEST_TO_DUT, DIFFTEST_TO_REF };
-#define RESET_VECTOR 0x80000000
+#define RESET_VECTOR 0x20000000
 
 extern uint32_t g_gpr[32];
 uint8_t* guest_to_host(uint32_t paddr);
 extern "C" {
 
 void init_difftest(long img_size, int port) {
+  printf("init_difftest\n");
 
   void *handle;
   handle = dlopen("/home/parano1d/ysyx-workbench/nemu/build/riscv32-nemu-interpreter-so", RTLD_LAZY);

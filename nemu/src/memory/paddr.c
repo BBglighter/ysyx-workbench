@@ -19,18 +19,41 @@
 #include <isa.h>
 #include <utils.h>
 
+// #define DIFFTEST_REF
 #if   defined(CONFIG_PMEM_MALLOC)
 static uint8_t *pmem = NULL;
 #else // CONFIG_PMEM_GARRAY
 static uint8_t pmem[CONFIG_MSIZE] PG_ALIGN = {};
 #endif
 
-uint8_t* guest_to_host(paddr_t paddr) { return pmem + paddr - CONFIG_MBASE; }
+static uint8_t mrom[4096];
+static uint8_t sram[4096];
+
+uint8_t* guest_to_host(paddr_t paddr) {
+  #ifdef DIFFTEST_REF
+    return &mrom[0];
+  #endif
+  return pmem + paddr - CONFIG_MBASE; 
+}
 paddr_t host_to_guest(uint8_t *haddr) { return haddr - pmem + CONFIG_MBASE; }
 
 
 
 void mtracePrint(paddr_t addr,word_t data,bool w_r);
+
+
+static word_t sram_read(paddr_t addr, int len) {
+  word_t ret = host_read((sram + addr - 0x0f000000), len);
+  IFDEF(CONFIG_MTRACE,mtracePrint(addr,ret,0));
+  return ret;
+}
+
+static word_t mrom_read(paddr_t addr, int len) {
+  word_t ret = host_read((mrom + addr - 0x20000000), len);
+  IFDEF(CONFIG_MTRACE,mtracePrint(addr,ret,0));
+  return ret;
+}
+
 static word_t pmem_read(paddr_t addr, int len) {
   word_t ret = host_read(guest_to_host(addr), len);
   IFDEF(CONFIG_MTRACE,mtracePrint(addr,ret,0));
@@ -42,7 +65,16 @@ static void pmem_write(paddr_t addr, int len, word_t data) {
   IFDEF(CONFIG_MTRACE,mtracePrint(addr,data,1));
 }
 
-#define DIFFTEST_REF
+static void sram_write(paddr_t addr, int len, word_t data) {
+  host_write((sram + addr - 0x0f000000), len, data);
+  IFDEF(CONFIG_MTRACE,mtracePrint(addr,data,1));
+}
+
+static void mrom_write(paddr_t addr, int len, word_t data) {
+  host_write((mrom + addr - 0x20000000), len, data);
+  IFDEF(CONFIG_MTRACE,mtracePrint(addr,data,1));
+}
+
 static void out_of_bound(paddr_t addr) {
   #ifdef DIFFTEST_REF
     return;
@@ -63,6 +95,8 @@ void init_mem() {
 #define RTC_ADDR 0x10000008
 word_t paddr_read(paddr_t addr, int len) {
   if (likely(in_pmem(addr))) return pmem_read(addr, len);
+  if (likely(in_mrom(addr))) return mrom_read(addr, len);
+  if (likely(in_sram(addr))) return sram_read(addr, len);
   IFDEF(CONFIG_DEVICE, return mmio_read(addr, len));
   // if(addr == RTC_ADDR || addr == RTC_ADDR+4){
   //   printf("test\n");
@@ -81,6 +115,8 @@ word_t paddr_read(paddr_t addr, int len) {
 
 void paddr_write(paddr_t addr, int len, word_t data) {
   if (likely(in_pmem(addr))) { pmem_write(addr, len, data); return; }
+  if (likely(in_mrom(addr))) { mrom_write(addr, len, data); return; }
+  if (likely(in_sram(addr))) { sram_write(addr, len, data); return; }
   IFDEF(CONFIG_DEVICE, mmio_write(addr, len, data); return);
   out_of_bound(addr);
 }

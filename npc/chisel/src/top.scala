@@ -3,14 +3,17 @@ package RV32I
 import chisel3._
 import chisel3.util._
 
-class Top extends Module{
+class ysyx_25110271 extends Module{
   val io = IO(new Bundle{
+    val master = Flipped(new axi4bus)
+    val slave = new axi4bus
+    val interrupt = Input(Bool())
     val regValid = Input(Bool())
-    val debugPc = Output(UInt(32.W))
+    // val debugPc = Output(UInt(32.W))
     val difftest = Output(Bool())
   })
 
-  val reg_pc = RegInit(0x80000000L.U(32.W))
+  val reg_pc = RegInit(0x20000000L.U(32.W))
   val reg_inst = RegInit(0x00000413.U(32.W))
 
   // io.pc := reg_pc
@@ -27,12 +30,12 @@ class Top extends Module{
   axi4bus.io.bus1sel := LSU.axisel
   axi4bus.io.bus2 <> IFU.io.axibus 
   axi4bus.io.bus2sel := IFU.io.axisel
-  axi4bus.io.out <> xbar.io.in
+  io.master <> axi4bus.io.master
+  io.slave  <> xbar.io.slave 
 
   reg_inst := IFU.io.out.bits.instr
-  io.debugPc := WBU.out
+  // io.debugPc := WBU.out
   reg_pc := WBU.out
-  io.difftest := Mux((WBU.nullinst && (reg_pc=/=0x80000000L.U)),true.B,false.B)
   IFU.io.pc := reg_pc
   IFU.io.loadinst := LSU.out.bits.load
   IFU.io.out <> IDU.io.in
@@ -43,6 +46,11 @@ class Top extends Module{
   RF.io.read <> IDU.io.io_reg
   RF.io.write <> WBU.io_reg
   RF.io.valid := io.regValid
+  // RF.io.valid := false.B
+  
+  val difftest_reg = RegInit(false.B)
+  difftest_reg := IFU.io.out.bits.wen 
+  io.difftest := difftest_reg
 
   
   val halt = Module(new halt())

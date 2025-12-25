@@ -3,25 +3,34 @@
 #include "verilated_fst_c.h"
 
 // Include model header, generated from Verilating "top.v"
-#include "VTop.h"
+#include "VysyxSoCFull.h"
 #include "common.h"
 #include "trace.h"
 #include "util.h"
 #include "difftest.h"
 
-// #define FST
+#define FST
 // #define TRACE
 // #define MTRACE
 // #define FTRACE
-// #define DIFFTEST
+#define DIFFTEST
+#define ysyxSoC
 
-VTop* top;
+static uint8_t MROM[10000];
+extern "C" void flash_read(int32_t addr, int32_t *data) { assert(0); }
+extern "C" void mrom_read(int32_t addr, int32_t *data) {
+  addr = addr & ~0x3;
+  *data = *(uint32_t*)(MROM + addr - 0x20000000); 
+  printf("%08x : %08x\n",addr,*data);
+}
+VysyxSoCFull* top;
 VerilatedContext* contextp;
 VerilatedFstC* tfp; 
 bool npcState = true;
 
 static uint64_t runtime;
 static uint64_t main_time = 0;
+static uint64_t imgsize = 0;
 
 void npc_quit(){
   #ifdef FST
@@ -59,6 +68,9 @@ static inline void host_write(void *addr, int len, int data) {
 
 static uint8_t count = 0;
 uint8_t* guest_to_host(uint32_t paddr) {
+  #ifdef ysyxSoC
+    return &MROM[0];
+  #endif
   // printf("%x \n",paddr);
   if( paddr == 0 ){
     count++;
@@ -234,7 +246,7 @@ uint32_t isa_reg_str2val(char* str){
 }
 
 bool npc_exec(uint64_t n){
-  for(;n > 0;n --){
+  for(int resetc = 0;n > 0;n --,resetc++){
     if(contextp->gotFinish()) {return true;}
     wen = 1;
     us = get_time();
@@ -249,6 +261,13 @@ bool npc_exec(uint64_t n){
     #endif
     
     #ifdef DIFFTEST
+    if(resetc == 9){
+      regPrint = 0;
+      isa_reg_display();
+      regPrint = 1;
+      printf("%d\n",imgsize);
+      init_difftest(imgsize*4,1234);
+    }
     if(top->io_difftest)
       difftest_step();
     #endif
@@ -262,7 +281,7 @@ void init_disasm();
 
 extern char* elf_file;
 int main(int argc, char** argv) {
-  setvbuf(stdout, NULL, _IONBF, 0);
+  Verilated::commandArgs(argc, argv);
   parse_args(argc,argv);
 
   #ifdef FTRACE
@@ -280,8 +299,8 @@ int main(int argc, char** argv) {
   // This needs to be called before you create any model
   contextp->commandArgs(argc, argv);
 
-  // Construct the Verilated model, from Vtop.h generated from Verilating "top.v"
-  top = new VTop{contextp};
+  // Construct the Verilated model, from .h generated from Verilating "top.v"
+  top = new VysyxSoCFull{contextp};
   
   Verilated::traceEverOn(true);
   tfp = new VerilatedFstC;
@@ -289,23 +308,33 @@ int main(int argc, char** argv) {
   tfp->open("wave.fst");
   init_mem();
   uint8_t *M = (uint8_t *)pmem;
-  
+
+  #ifndef  ysyxSoC
   FILE * fp = fopen("/home/parano1d/ysyx-workbench/npc/test.bin","rb");
-  uint64_t count = 0;
   uint32_t temp = 0;
   size_t n;
   M += 0x00000000;
   while((n = fread(&temp,1,sizeof(uint8_t),fp)) > 0) {
-  // printf("0x%08x : 0x%08xn",M+count,temp);
-      M[count] = temp;
-      count+=1;
+  // printf("0x%08x : 0x%08xn",M+imgsize,temp);
+      M[imgsize] = temp;
+      imgsize+=1;
   }
+  #else
+  FILE * fp = fopen("/home/parano1d/ysyx-workbench/npc/test.bin","rb");
+  int n = 0;
+  uint32_t temp = 0;
+  while((n = fread(&temp,1,sizeof(uint32_t),fp)) > 0) {
+      // printf("%08x\n",temp);
+      ((uint32_t *)MROM)[imgsize] = temp;
+      imgsize+=1;
+  }
+  #endif
 
   //init difftest
   static int difftest_port = 1234;
   
   #ifdef DIFFTEST
-  init_difftest(count,difftest_port);
+  init_difftest(imgsize*4,difftest_port);
   #endif
 
   // Simulate until $finish

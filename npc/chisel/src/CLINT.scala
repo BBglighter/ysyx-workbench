@@ -38,4 +38,7 @@ class CLINT extends Module {
   io.axi4io.wready  := false.B
   io.axi4io.bvalid  := false.B
   io.axi4io.bresp   := 0.U
+  io.axi4io.rid    := 0.U
+  io.axi4io.bid    := 0.U
+  io.axi4io.rlast  := 0.U
 }

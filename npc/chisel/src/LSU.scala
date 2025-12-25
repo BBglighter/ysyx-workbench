@@ -7,37 +7,50 @@ class LSU extends Module{
   val in = IO(Flipped(Decoupled(new EX2LS)))
   val out = IO(Decoupled(new LS2WB))
   val axibus = IO(Flipped(new axi4bus))
-  val axisel = IO(Output(UInt(2.W)))
+  val axisel = IO(Output(UInt(3.W)))
     
   val reg_pc = RegInit(0.U(32.W))
   reg_pc := in.bits.cf.pc
 
   out.bits.load := false.B
-
+ 
   axibus.araddr := 0.U
-  axibus.arvalid := false.B
+  axibus.arvalid := 0.U
+  axibus.arid   := 0.U
+  axibus.arlen  := 0.U
+  axibus.arsize := 0.U
+  axibus.arburst:= 0.U
+
   axibus.awaddr := 0.U
-  axibus.awvalid := false.B
-  axibus.wdata  := 0.U 
-  axibus.wstrb  := 0.U 
-  axibus.wvalid  := false.B
+  axibus.awvalid := 0.U
+  axibus.awid   := 0.U
+  axibus.awlen  := 0.U
+  axibus.awsize := 0.U
+  axibus.awburst:= 0.U
+
+  axibus.wdata := 0.U
+  axibus.wstrb := 0.U
+  axibus.wvalid := 0.U
+  axibus.wlast := 0.U
+  
   val reg_bready = RegInit(false.B)
   val reg_rready = RegInit(false.B)
   axibus.rready := reg_rready
   axibus.bready  := reg_bready
   reg_bready := false.B
-  when(in.bits.idCtrl.fuType === fuType.lsu && in.bits.cf.wen){
+  when(in.bits.idCtrl.fuType === fuType.lsu){
     when(in.bits.idCtrl.immType === ImmType.immS){
       axibus.awvalid := true.B
       axibus.wvalid := true.B
       axibus.awaddr := in.bits.data.src1 + in.bits.data.imm
-      axibus.wdata := in.bits.data.src2
+      axibus.wdata := (in.bits.data.src2 << (axibus.awaddr(1,0) * 8.U))
       reg_bready := true.B
-      axibus.bready := RegNext(true.B)
+      axibus.wlast := true.B
+      // axibus.bready := RegNext(true.B)
     }.otherwise{
     axibus.araddr := in.bits.exuData.wdata
     axibus.arvalid := true.B
-    axibus.rready := true.B
+    reg_rready := true.B
     out.bits.load := true.B
     }
   }
@@ -67,19 +80,17 @@ class LSU extends Module{
   }
 
 
-  val notload :: p1 :: p2 :: Nil = Enum(3)
+  val notload :: p1 ::  Nil = Enum(2)
   val state = RegInit(notload)
   state := MuxLookup(state,notload)(List(
     notload -> Mux(out.bits.load, p1, notload),
-    p1      -> p2,
-    p2      -> notload
+    p1      -> Mux(out.bits.load, p1, notload)
     ))
-  when(state === p2){
+  when(axibus.rready && axibus.rvalid && state =/= notload){
     out.bits.load := false.B
   }
   when(state === p1){
     axibus.arvalid := false.B
-    axibus.rready := false.B
   }
 
   val stop :: run :: skip :: Nil = Enum(3)
@@ -87,9 +98,9 @@ class LSU extends Module{
   sel := MuxLookup(sel,stop)(List(
     stop -> run,
     run  -> Mux(out.bits.load, skip, stop),
-    skip -> stop
+    skip -> Mux(out.bits.load, skip, stop)
     ))
-  axisel := Mux((sel === run)||(sel === skip),2.U,0.U)
+  axisel := Mux((sel === skip), 3.U, Mux((in.bits.idCtrl.fuType === fuType.lsu), 2.U, 0.U))
 
   out.bits.wbData.wdata := Mux(state =/= p1,in.bits.exuData.wdata,MuxLookup(in.bits.idCtrl.memType,in.bits.exuData.wdata)(Seq(
     MemOpType.lw -> axibus.rdata,

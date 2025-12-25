@@ -11,7 +11,7 @@ verilog:
 	$(call git_commit, "generate verilog")
 	mkdir -p ./vsrc
 	$(mill) -i $(PRJ).runMain Elaborate --target-dir ./vsrc
-	ex -sc '$$-1,$$d|x' ./vsrc/Top.sv
+	ex -sc '$$-1,$$d|x' ./vsrc/ysyx_25110271.sv
 
 help:
 	$(mill) -i $(PRJ).runMain Elaborate --help
@@ -38,7 +38,7 @@ idea:
 
 TOPNAME = detectkey
 NXDC_FILES = constr/top.nxdc
-INC_PATH ?=
+INC_PATH ?= 
 
 VERILATOR = verilator
 VERILATOR_CFLAGS += -MMD --build -cc  \
@@ -59,6 +59,7 @@ $(SRC_AUTO_BIND): $(NXDC_FILES)
 
 # project source
 VSRCS = $(shell find $(abspath ./vsrc) -name "*.sv")
+VSRCS += $(shell find $(abspath ../ysyxSoC/perip) -name "*.v")
 CSRCS = $(shell find $(abspath ./csrc) -name "*.c" -or -name "*.cc" -or -name "*.cpp")
 CSRCS += $(SRC_AUTO_BIND)
 
@@ -67,6 +68,7 @@ include $(NVBOARD_HOME)/scripts/nvboard.mk
 
 # rules for verilator
 INCFLAGS = $(addprefix -I, $(INC_PATH))
+INCFLAGS += $(addprefix -I, ../ysyxSoC/perip/uart16550/rtl ../ysyxSoC/perip/spi/rtl)
 CXXFLAGS += $(INCFLAGS) -DTOP_NAME="\"V$(TOPNAME)\""
 
 $(BIN): $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
@@ -78,8 +80,23 @@ $(BIN): $(VSRCS) $(CSRCS) $(NVBOARD_ARCHIVE)
 
 all: default
 
+ALL_SOC_DIRS = $(shell find ../ysyxSoC/perip -type d)
+ALL_NPC_DIRS = $(shell find ./vsrc -type d)
+
+V_FLAGS = $(addprefix -y , $(ALL_SOC_DIRS))
+V_FLAGS += $(addprefix -y , $(ALL_NPC_DIRS))
+ALL_VSRC_FILES = $(shell find ../ysyxSoC/perip -name "*.v")
+ALL_VSRC_FILES += $(shell find ../ysyxSoC/build -name "*.v")
+
+CSRC = $(shell find $(abspath ./csrc) -name "*.cpp")
 sim:
-	$(VERILATOR) -cc --exe --build --trace-fst -j vsrc/Top.sv csrc/sim_main.cpp
+	$(VERILATOR) $(VERILATOR_CFLAGS)  $(INCFLAGS) $(CSRC) -cc --exe --build --trace-fst -j 0\
+		--timescale "1ns/1ns" --no-timing --autoflush \
+		$(ALL_VSRC_FILES) ./vsrc/ysyx_25110271.sv \
+		-LDFLAGS "-lreadline -lncurses"\
+		-CFLAGS "-I $(NEMU_HOME)/tools/capstone/repo/include"\
+		--top-module ysyxSoCFull
+	./obj_dir/VysyxSoCFull
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
 
 sim_nvboard: $(BIN) 

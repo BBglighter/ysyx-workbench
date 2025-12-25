@@ -10,19 +10,20 @@ class WBU extends Module{
   val halt = IO(Output(Bool()))
   val io_reg = IO(Flipped(new RegWrite))
   val rd = Wire(UInt(5.W))
+
   rd := in.bits.cf.instr(11,7)
  
   nullinst := Mux(in.bits.idCtrl.fuType === fuType.none,true.B,false.B)
 
   val s_load :: s_over :: Nil = Enum(2)
-  val state = RegInit(s_load)
+  val state = RegInit(s_over)
   state := MuxLookup(state,s_load)(List(
-    s_load       -> Mux(in.bits.load, s_over, s_load),
-    s_over -> s_load
+    s_load -> Mux(in.bits.load, s_load, s_over),
+    s_over -> Mux(in.bits.load, s_load, s_over)
     ))
   
   val loadover = Wire(Bool())
-  loadover := (!in.bits.load || state === s_over)
+  loadover := (!in.bits.load)
   //Default
   io_reg.waddr := rd
   io_reg.wdata := Mux(in.bits.idCtrl.immType === ImmType.iCSR, in.bits.wbData.csr, in.bits.wbData.wdata)
@@ -32,13 +33,13 @@ class WBU extends Module{
   when(in.bits.idCtrl.fuType === fuType.ebreak && in.bits.cf.wen){
     halt := true.B
   }.elsewhen(!(in.bits.idCtrl.immType === ImmType.immS||in.bits.idCtrl.immType === ImmType.immB||in.bits.idCtrl.immType === ImmType.none) 
-                &&((in.bits.cf.wen&&loadover)||(loadover&&in.bits.load))){
+                &&(in.bits.cf.wen)){
     io_reg.wen := true.B    
   }
   
   out := Mux((in.bits.cf.wen&&loadover)||(loadover&&in.bits.load),in.bits.wbData.dnpc,in.bits.cf.pc)
 
-  in.ready := (in.bits.cf.wen&&in.bits.load)
+  in.ready := loadover
 
   val ftraceDPI = Module(new ftrace())
   ftraceDPI.io.call := false.B

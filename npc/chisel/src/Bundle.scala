@@ -84,24 +84,36 @@ class axi4bus extends Bundle{
   val araddr  = Input(UInt(32.W))
   val arvalid = Input(Bool())
   val arready = Output(Bool())
+  val arid    = Input(UInt(4.W))
+  val arlen   = Input(UInt(8.W))
+  val arsize  = Input(UInt(3.W))
+  val arburst = Input(UInt(2.W))
 
   val rdata   = Output(UInt(32.W))
   val rresp   = Output(UInt(2.W))
   val rvalid  = Output(Bool())
   val rready  = Input(Bool())
+  val rlast   = Output(Bool())
+  val rid     = Output(UInt(4.W))
 
   val awaddr  = Input(UInt(32.W))
   val awvalid = Input(Bool())
   val awready = Output(Bool())
+  val awid    = Input(UInt(4.W))
+  val awlen   = Input(UInt(8.W))
+  val awsize  = Input(UInt(3.W))
+  val awburst = Input(UInt(2.W))
   
   val wdata   = Input(UInt(32.W))
   val wstrb   = Input(UInt(4.W))
   val wvalid  = Input(Bool())
   val wready  = Output(Bool())
+  val wlast   = Input(Bool())
   
   val bresp   = Output(UInt(2.W))
   val bvalid  = Output(Bool())
   val bready  = Input(Bool())
+  val bid     = Output(UInt(4.W))
 }
 
 

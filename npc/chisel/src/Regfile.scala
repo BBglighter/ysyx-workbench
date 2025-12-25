@@ -11,7 +11,8 @@ class Regfile extends Module{
     val write = new RegWrite
     val halt_d = Output(UInt(32.W))
   }) 
-  val regs = Reg(Vec(32,UInt(32.W)))
+  val regs = RegInit(VecInit(Seq.fill(32)(0.U(32.W))))
+  // val regs = Reg(Vec(32,UInt(32.W)))
   val mcycle = RegInit(0.U(32.W))
   val mcycleh = RegInit(0.U(32.W))
   val mvendorid = RegInit("h79737978".U(32.W))

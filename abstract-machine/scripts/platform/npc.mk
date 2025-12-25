@@ -35,6 +35,6 @@ run: insert-arg
 	verilator -cc --exe --build --trace-fst  $(NPC_HOME)/vsrc/Top.sv $(wildcard $(NPC_HOME)/csrc/*.cpp) \
 		-LDFLAGS "-lreadline -lncurses" -CFLAGS "-I $(NEMU_HOME)/tools/capstone/repo/include"
 	cp $(IMAGE_REL).bin $(NPC_HOME)/test.bin 
-	./obj_dir/VTop $(ARGS)  	
+	./obj_dir/VysyxSoCFull $(ARGS)  	
 
 .PHONY: insert-arg

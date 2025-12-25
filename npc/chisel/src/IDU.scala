@@ -63,6 +63,6 @@ class IDU extends Module{
   io.out.bits.data <> data
   io.out.bits.cf := io.in.bits
   
-  io.in.ready := true.B
-  io.out.valid := true.B
+  io.in.ready := io.out.ready
+  io.out.valid := io.in.valid
 }
